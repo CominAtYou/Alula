@@ -1,10 +1,10 @@
 import { ChannelType, Client, GatewayIntentBits, Partials } from 'discord.js';
-import handlePrivateMessage from './lib/conversationHandlers/privateMessageHandler';
-import handleThreadMessage from './lib/conversationHandlers/threadMessageHandler';
-import buttonHandler from './lib/buttonHandlers/buttonHandler';
-import { DISCORD_BOT_TOKEN } from './lib/secrets';
-import { createMongoConnection } from './lib/db/mongoInstance';
-import slashCommandRouter from './lib/slashcommands/slashCommandRouter';
+import handlePrivateMessage from './src/conversationHandlers/privateMessageHandler';
+import handleThreadMessage from './src/conversationHandlers/threadMessageHandler';
+import buttonHandler from './src/buttonHandlers/buttonHandler';
+import { DISCORD_BOT_TOKEN } from './src/secrets';
+import { createMongoConnection } from './src/db/mongoInstance';
+import slashCommandRouter from './src/slashcommands/slashCommandRouter';
 
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildMembers],

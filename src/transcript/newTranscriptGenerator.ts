@@ -11,7 +11,7 @@ const FILE_SVG = `<svg class="file-icon" xmlns="http://www.w3.org/2000/svg" heig
 export default async function generateTranscript(details: ConversationDetails, messages: Message[], moderators: GuildMember[], hideModerators: boolean) {
     const filteredMessages = messages.filter(message => (!message.author.bot || message.webhookId) && message.type === MessageType.Default);
 
-    const template = await readFile("./lib/transcript/transcript-template.html", 'utf-8');
+    const template = await readFile("./src/transcript/transcript-template.html", 'utf-8');
     const $ = cheerio.load(template);
     const groups: Message[][] = [];
     let currentAuthor = filteredMessages[0].webhookId || filteredMessages[0];
