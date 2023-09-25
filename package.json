@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "discord.js": "^14.13.0",
+    "moment": "^2.29.4",
+    "mongodb": "^6.1.0",
+    "pretty-bytes": "^6.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.6.5"
+  }
+}

@@ -1,0 +1,6 @@
+src/secrets.ts
+.vscode/settings.json
+node_modules
+**/*.js
+**/*.js.map
+tsconfig.tsbuildinfo

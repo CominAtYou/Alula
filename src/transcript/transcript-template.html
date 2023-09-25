@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversation Transcript</title>
+    <style>
+        * {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', system-ui, sans-serif;
+            transition-property: width, height, opacity, margin, background-color, padding, left, top, font-size, line-height, transform, filter;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 500ms;
+
+            --webkit-tap-color: transparent;
+        }
+
+        html,
+        body {
+            height: 100vh;
+            width: 100vw;
+            margin: 0;
+            background-color: rgb(250, 250, 250);
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        p {
+            margin: 0;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #navbar-container {
+            width: 100%;
+        }
+
+        #navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #dfdfdf;
+            padding: 0.75rem 1.5rem 0.75rem 1.5rem;
+        }
+
+        #navbar-icon {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+        }
+
+        #navbar-left {
+            display: flex;
+            align-items: center;
+            user-select: none;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        #navbar-right {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #details-button {
+            padding: 0.5rem;
+            background-color: #e8e8e8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        #content {
+            flex: 1 1 0%;
+            display: flex;
+            justify-content: center;
+            height: auto;
+            overflow: hidden;
+        }
+
+        #conversation-container {
+            max-width: 1220px;
+            flex-grow: 2;
+            border-right: 1px solid #dfdfdf;
+            height: 100%;
+            max-height: 100%;
+        }
+
+        #conversation-content {
+            padding-left: 3.5rem;
+            padding-right: 3.5rem;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            height: 100%;
+            width: 100%;
+            overflow-y: auto;
+        }
+
+        #conversation-content > :first-child {
+            margin-top: 3.5rem;
+        }
+
+        #conversation-content > :last-child {
+            margin-bottom: 3.5rem;
+        }
+
+        #conversation-details {
+            flex: 1 1 0%;
+            width: 100%;
+            min-width: 23.125rem;
+            max-width: 23.125rem;
+            padding: 3.75rem 1.5rem 3rem 1.5rem;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+            overflow-y: scroll;
+        }
+
+        #conversation-details-header {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            max-width: 100%;
+            width: 100%;
+        }
+
+        #conversation-details-avatar {
+            width: 5rem;
+            height: 5rem;
+            user-select: none;
+            border-radius: 9999px;
+        }
+
+        #conversation-details-username {
+            margin-top: .5rem;
+            font-weight: 600;
+            max-width: 100%;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        #conversation-details-user-id {
+            opacity: 40%;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .conversation-details-section-header {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            font-weight: 800;
+            opacity: 40%;
+            margin-left: 1rem;
+            user-select: none;
+        }
+
+        .conversation-details-content-container {
+            display: flex;
+            flex-direction: column;
+            padding: 1rem 1.2rem 1rem 1.2rem;
+            background-color: #e8e8e8;
+            border-radius: 15px;
+            gap: 0.25rem;
+        }
+
+        .conversation-details-element {
+            display: flex;
+            flex-direction: column;
+            justify-content: start;
+            gap: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        #conversation-details-main-content div {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #conversation-details-main-content div :first-child {
+            user-select: none;
+            font-weight: 600;
+        }
+
+        #conversation-details-main-content div :last-child {
+            opacity: 50%;
+        }
+
+        .conversation-details-moderator-entry-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .conversation-details-moderator-entry {
+            display: flex;
+            width: 100%;
+            gap: 0.75rem;
+        }
+
+        #moderator-avatar-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .moderator-avatar {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            user-select: none;
+        }
+
+        .moderator-details {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .moderator-username {
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+            max-width: 100%;
+        }
+
+        .moderator-id {
+            font-size: 12px;
+            opacity: 40%;
+            font-weight: 600;
+        }
+
+        .chathead-left {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            align-self: flex-start;
+        }
+
+        .chathead-avatar {
+            border-radius: 9999px;
+            width: 2.5rem;
+            height: 2.5rem;
+            user-select: none;
+        }
+
+        .chathead-first-message {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .message-details {
+            font-size: 0.8rem;
+            opacity: 40%;
+            font-weight: 600;
+            user-select: none;
+            margin-left: 4.125rem;
+            word-break: break-word;
+            white-space: nowrap;
+        }
+
+        .message-bubble {
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+            border-radius: 1.5rem;
+            max-width: 28rem;
+            padding: 0.75rem 1rem 0.75rem 1rem;
+            max-width: 28rem;
+            word-break: break-word;
+        }
+
+        .chathead-first-message:has(img.message-bubble-single, img.message-bubble-initial, video.message-bubble-initial, video.message-bubble-single) {
+            align-items: start !important;
+        }
+
+        .chathead-left .message-bubble {
+            background-color: #e8e8e8;
+            align-self: flex-start;
+            margin-right: 3.5rem;
+        }
+
+        .chathead-right {
+            align-self: flex-end;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            align-items: flex-end;
+        }
+
+        .chathead-right > .chathead-first-message {
+            align-self: flex-end;
+            display: flex;
+            flex-direction: row-reverse;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .chathead-right > .message-details {
+            font-size: 0.8rem;
+            opacity: 40%;
+            font-weight: 600;
+            margin-right: 4.125rem;
+        }
+
+        .chathead-right .message-bubble {
+            background: #5865F2;
+            color: white;
+            align-self: flex-end;
+            margin-left: 3.5rem;
+        }
+
+        .message-bubble-single {
+            border-radius: 1.5rem;
+        }
+
+        .chathead-left .message-bubble-initial {
+            border-radius: 1.5rem 1.5rem 1.5rem 0.25rem;
+        }
+
+        .chathead-right .message-bubble-initial {
+            border-radius: 1.5rem 1.5rem 0.25rem 1.5rem;
+        }
+
+        .chathead-left .message-bubble-middle {
+            border-radius: 0.25rem 1.5rem 1.5rem 0.25rem;
+            margin-left: 3.5rem;
+        }
+
+        .chathead-right .message-bubble-middle {
+            border-radius: 1.5rem 0.25rem 0.25rem 1.5rem;
+            margin-right: 3.5rem;
+        }
+
+        .chathead-left .message-bubble-final {
+            border-radius: 0.25rem 1.5rem 1.5rem 1.5rem;
+            margin-left: 3.5rem;
+        }
+
+        .chathead-right .message-bubble-final {
+            border-radius: 1.5rem 0.25rem 1.5rem 1.5rem;
+            margin-right: 3.5rem;
+        }
+
+        .message-bubble-file {
+            background: #e8e8e8 !important;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.75rem;
+            color: black !important;
+            text-decoration: none;
+        }
+
+        .message-bubble-file > div {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .message-bubble-file > div > :first-child {
+            font-weight: 600;
+        }
+
+        .message-bubble-file > div > :last-child {
+            opacity: 40%;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .file-icon {
+            padding: 0.5rem;
+            border-radius: 9999999rem;
+            background-color: #5c6aff;
+            fill: white;
+            min-width: 1.5rem;
+            min-height: 1.5rem;
+        }
+
+        img.message-bubble {
+            cursor: pointer;
+        }
+
+        .message-bubble {
+            font-size: 0.95rem;
+        }
+
+        img.message-bubble, video.message-bubble {
+            padding: 0 !important;
+            max-height: 25rem;
+        }
+
+        .moderator-avatar-container {
+            display: flex;
+            align-items: center;
+        }
+
+        @media screen and (min-width: 1600px) {
+            #content {
+                padding-left: 10rem;
+                padding-right: 10rem;
+            }
+
+            #conversation-container {
+                border-left: 1px solid #dfdfdf;
+            }
+
+            #conversation-details {
+                border-right: 1px solid #dfdfdf;
+                min-width: 23.75rem;
+                max-width: 23.75rem;
+            }
+        }
+
+        @media screen and (max-width: 1079px) {
+            #conversation-details {
+                display: none;
+                max-width: 100%;
+                min-width: 100%;
+            }
+
+            #conversation-content {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            #conversation-container {
+                border-right: none;
+            }
+
+            #conversation-content  > :first-child {
+                margin-top: 1.5rem;
+            }
+
+            #conversation-content > :last-child {
+                margin-bottom: 1.5rem;
+            }
+
+            .message-bubble {
+                max-width: 15rem;
+            }
+
+            img.message-bubble, video.message-bubble {
+                max-height: 15rem;
+            }
+
+            #details-button {
+                visibility: visible;
+                pointer-events: all;
+            }
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #18181b;
+                color: white;
+            }
+
+            .chathead-left .message-bubble {
+                background-color: #3f3f46;
+            }
+
+            #navbar {
+                border-bottom: rgb(50 50 50) 1px solid;
+            }
+
+            #conversation-container {
+                border-left: rgb(50 50 50) 1px solid;
+                border-right: rgb(50 50 50) 1px solid;
+            }
+
+            .conversation-details-content-container {
+                background-color: #3f3f46;
+            }
+
+            #conversation-details {
+                border-right: rgb(50 50 50) 1px solid;
+            }
+
+            .message-bubble-file {
+                background: #3f3f46 !important;
+                color: white !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav id="navbar-container">
+        <div id="navbar">
+            <div id="navbar-left">
+                <img id="navbar-icon" src="https://cdn.discordapp.com/icons/220667551364022272/7c4c765ca9de5be368e427d24739fdb3.png?size=256">
+                <h1>Transcript</h1>
+            </div>
+            <div id="navbar-right">
+                <div id="details-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M40-272q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v32q0 33-23.5 56.5T600-160H120q-33 0-56.5-23.5T40-240v-32Zm800 112H738q11-18 16.5-38.5T760-240v-40q0-44-24.5-84.5T666-434q51 6 96 20.5t84 35.5q36 20 55 44.5t19 53.5v40q0 33-23.5 56.5T840-160ZM360-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm400-160q0 66-47 113t-113 47q-11 0-28-2.5t-28-5.5q27-32 41.5-71t14.5-81q0-42-14.5-81T544-792q14-5 28-6.5t28-1.5q66 0 113 47t47 113ZM120-240h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T440-640q0-33-23.5-56.5T360-720q-33 0-56.5 23.5T280-640q0 33 23.5 56.5T360-560Zm0 320Zm0-400Z"/></svg>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div id="content">
+        <div id="conversation-container">
+            <div id="conversation-content">
+            </div>
+        </div>
+        <div id="conversation-details">
+            <div id="conversation-details-header">
+                <img id="conversation-details-avatar" src="">
+                <h1 id="conversation-details-username"></h1>
+                <p id="conversation-details-user-id"></p>
+            </div>
+            <div class="conversation-details-element">
+                <p class="conversation-details-section-header">Conversation Details</p>
+                <div class="conversation-details-content-container" id="conversation-details-main-content">
+                    <div>
+                        <p>Request Type</p>
+                        <p id="request-type"></p>
+                    </div>
+                    <div>
+                        <p>Conversation ID</p>
+                        <p id="conversation-id"></p>
+                    </div>
+                    <div>
+                        <p>Opened</p>
+                        <p id="conversation-opened"></p>
+                    </div>
+                    <div>
+                        <p>Closed</p>
+                        <p id="conversation-closed"></p>
+                    </div>
+                    <div id="conversation-closer-container">
+                        <p>Closed by</p>
+                        <p id="conversation-closer"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="conversation-details-element" id="attending-moderators">
+                <p class="conversation-details-section-header">Attending Moderators</p>
+                <div class="conversation-details-content-container">
+                    <div class="conversation-details-moderator-entry-container" id="conversation-details-moderators-content">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isDetailsViewShown = false;
+
+        /** @param {Date} date */
+        function formatDateTimeString(date) {
+            return date.toLocaleString(navigator.language, {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            }).replace(",", "");
+        }
+
+        document.querySelectorAll("img.message-bubble").forEach(i => {
+            i.addEventListener("click", () =>  window.open(i.src));
+        });
+
+        document.querySelector("#details-button").addEventListener("click", () => {
+            document.querySelector("#conversation-container").style.display = isDetailsViewShown ? "" : "none";
+            document.querySelector("#conversation-details").style.display = isDetailsViewShown ? "" : "flex";
+
+            isDetailsViewShown = !isDetailsViewShown;
+        });
+
+        document.querySelectorAll(".chathead-left, .chathead-right").forEach(element => {
+            const timestamp = element.querySelector(".message-timestamp");
+            element.querySelector(".message-details").textContent += formatDateTimeString(new Date(parseInt(timestamp.textContent)));
+            timestamp.remove();
+        });
+
+        const openedTimestamp = document.querySelector("#conversation-opened-time");
+        const closedTimestamp = document.querySelector("#conversation-closed-time");
+
+        document.querySelector("#conversation-opened").textContent = formatDateTimeString(new Date(parseInt(openedTimestamp.textContent)));
+        document.querySelector("#conversation-closed").textContent = formatDateTimeString(new Date(parseInt(closedTimestamp.textContent)));
+
+        openedTimestamp.remove();
+        closedTimestamp.remove();
+    </script>
+</body>
+
+</html>
