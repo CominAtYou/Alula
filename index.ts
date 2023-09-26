@@ -32,8 +32,8 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.once('ready', async client => {
-    await createMongoConnection();
     console.log(`Logged in as ${client.user.tag}!`);
+    createMongoConnection();
 });
 
 client.login(DISCORD_BOT_TOKEN);

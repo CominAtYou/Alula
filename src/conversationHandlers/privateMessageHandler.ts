@@ -1,8 +1,9 @@
 import { ActionRowBuilder, ForumChannel, Message, ButtonStyle, ButtonBuilder, ComponentType, ButtonInteraction, EmbedBuilder } from "discord.js";
 import { getMongoDatabase } from "../db/mongoInstance";
-import { MODERATION_FORUM_CHANNEL_ID, APPEALS_FORUM_CHANNEL_ID, NEW_THREAD_NOTIFICATION_ROLE_ID, MODMAIL_BAN_ROLE_ID } from "../constants";
+import { MODERATION_FORUM_CHANNEL_ID, NEW_THREAD_NOTIFICATION_ROLE_ID, MODMAIL_BAN_ROLE_ID } from "../constants";
 import { ActiveThread } from "../types/ActiveThread";
 import { ThreadType, stringToThreadType, threadTypeToId } from "../types/ThreadType";
+import splitMessage from "../util/splitMessage";
 
 export default async function handlePrivateMessage(message: Message) {
     const db = getMongoDatabase();
@@ -21,20 +22,32 @@ export default async function handlePrivateMessage(message: Message) {
         const webhook = forumChannelWebhooks.size > 0 ? forumChannelWebhooks.first() : await forumChannel.createWebhook({ name: "Modmail Webhook", reason: "No webhook was present for the forum channel." });
 
         const files = message.attachments.filter(attachment => attachment.size <= 25000000).map(attachment => attachment.url);
-        const leftoverFiles = [...message.attachments.values()].filter(attachment => attachment.size > 25000000);
+        const leftoverFiles = [...message.attachments.values()].filter(attachment => attachment.size > 25000000).map(attachment => attachment.url);
 
-        let messageContent = message.content;
+        let messageContent = message.content.replace(/<:(\w+):\d+>/g, ":$1:");;
         if (leftoverFiles.length > 0) {
-            messageContent += `\n\n${leftoverFiles.map(attachment => attachment.url).join("\n")}`;
+            messageContent += `\n\n${leftoverFiles.join("\n")}`;
         }
 
-        webhook.send({
-            threadId: activeThread.receivingThreadId,
-            content: messageContent,
-            username: guildMember.displayName,
-            avatarURL: message.author.displayAvatarURL({ forceStatic: true }),
-            files: files
-        });
+        const messageContentSplit = splitMessage(messageContent);
+        for (let i = 0; i < messageContentSplit.length; i++) {
+            webhook.send({
+                threadId: activeThread.receivingThreadId,
+                content: messageContentSplit[i],
+                username: guildMember.displayName,
+                avatarURL: message.author.displayAvatarURL({ forceStatic: true }),
+                files: i === messageContentSplit.length - 1 ? files : []
+            });
+        }
+
+        if (messageContentSplit.length === 0) {
+            webhook.send({
+                threadId: activeThread.receivingThreadId,
+                username: guildMember.displayName,
+                avatarURL: message.author.displayAvatarURL({ forceStatic: true }),
+                files: files
+            });
+        }
 
         return;
     }
@@ -108,20 +121,32 @@ export default async function handlePrivateMessage(message: Message) {
     });
 
     const files = message.attachments.filter(attachment => attachment.size <= 25000000).map(attachment => attachment.url);
-    const leftoverFiles = [...message.attachments.values()].filter(attachment => attachment.size > 25000000)
+    const leftoverFiles = [...message.attachments.values()].filter(attachment => attachment.size > 25000000).map(attachment => attachment.url);
 
-    let messageContent = message.content;
+    let messageContent = message.content.replace(/<:(\w+):\d+>/g, ":$1:");;
     if (leftoverFiles.length > 0) {
-        messageContent += `\n\n${leftoverFiles.map(attachment => attachment.url).join("\n")}`;
+        messageContent += `\n\n${leftoverFiles.join("\n")}`;
     }
 
-    webhook.send({
-        threadId: newThread.id,
-        content: messageContent,
-        username: guildMember.displayName,
-        avatarURL: message.author.displayAvatarURL({ forceStatic: true }),
-        files: files
-    });
+    const messageContentSplit = splitMessage(messageContent);
+    for (let i = 0; i < messageContentSplit.length; i++) {
+        webhook.send({
+            threadId: newThread.id,
+            content: messageContentSplit[i],
+            username: guildMember.displayName,
+            avatarURL: message.author.displayAvatarURL({ forceStatic: true }),
+            files: i === messageContentSplit.length - 1 ? files : []
+        });
+    }
+
+    if (messageContentSplit.length === 0) {
+        webhook.send({
+            threadId: newThread.id,
+            username: guildMember.displayName,
+            avatarURL: message.author.displayAvatarURL({ forceStatic: true }),
+            files: files
+        });
+    }
 
     mailTypeMessage.edit({
         content: "",

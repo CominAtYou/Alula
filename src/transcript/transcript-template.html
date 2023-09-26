@@ -292,6 +292,11 @@
             word-break: break-word;
         }
 
+
+        .messaeg-bubble a, .message-bubble a:visited {
+            color: inherit;
+        }
+
         .chathead-first-message:has(img.message-bubble-single, img.message-bubble-initial, video.message-bubble-initial, video.message-bubble-single) {
             align-items: start !important;
         }
@@ -511,7 +516,7 @@
     <nav id="navbar-container">
         <div id="navbar">
             <div id="navbar-left">
-                <img id="navbar-icon" src="https://cdn.discordapp.com/icons/220667551364022272/7c4c765ca9de5be368e427d24739fdb3.png?size=256">
+                <img id="navbar-icon" src="">
                 <h1>Transcript</h1>
             </div>
             <div id="navbar-right">
@@ -594,7 +599,7 @@
 
         document.querySelectorAll(".chathead-left, .chathead-right").forEach(element => {
             const timestamp = element.querySelector(".message-timestamp");
-            element.querySelector(".message-details").textContent += formatDateTimeString(new Date(parseInt(timestamp.textContent)));
+            element.querySelector(".message-details").textContent += ` ${formatDateTimeString(new Date(parseInt(timestamp.textContent)))}`;
             timestamp.remove();
         });
 
