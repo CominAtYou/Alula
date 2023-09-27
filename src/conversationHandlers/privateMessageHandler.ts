@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ForumChannel, Message, ButtonStyle, ButtonBuilder, ComponentType, ButtonInteraction, EmbedBuilder } from "discord.js";
+import { ActionRowBuilder, ForumChannel, Message, ButtonStyle, ButtonBuilder, ComponentType, ButtonInteraction, EmbedBuilder, AllowedMentionsTypes } from "discord.js";
 import { getMongoDatabase } from "../db/mongoInstance";
 import { MODERATION_FORUM_CHANNEL_ID, NEW_THREAD_NOTIFICATION_ROLE_ID, MODMAIL_BAN_ROLE_ID } from "../constants";
 import { ActiveThread } from "../types/ActiveThread";
@@ -36,7 +36,8 @@ export default async function handlePrivateMessage(message: Message) {
                 content: messageContentSplit[i],
                 username: guildMember.displayName,
                 avatarURL: message.author.displayAvatarURL({ forceStatic: true }),
-                files: i === messageContentSplit.length - 1 ? files : []
+                files: i === messageContentSplit.length - 1 ? files : [],
+                allowedMentions: { parse: [ AllowedMentionsTypes.User ] }
             });
         }
 
@@ -45,7 +46,8 @@ export default async function handlePrivateMessage(message: Message) {
                 threadId: activeThread.receivingThreadId,
                 username: guildMember.displayName,
                 avatarURL: message.author.displayAvatarURL({ forceStatic: true }),
-                files: files
+                files: files,
+                allowedMentions: { parse: [ AllowedMentionsTypes.User ] }
             });
         }
 
@@ -135,7 +137,8 @@ export default async function handlePrivateMessage(message: Message) {
             content: messageContentSplit[i],
             username: guildMember.displayName,
             avatarURL: message.author.displayAvatarURL({ forceStatic: true }),
-            files: i === messageContentSplit.length - 1 ? files : []
+            files: i === messageContentSplit.length - 1 ? files : [],
+            allowedMentions: { parse: [ AllowedMentionsTypes.User ] }
         });
     }
 
@@ -144,7 +147,8 @@ export default async function handlePrivateMessage(message: Message) {
             threadId: newThread.id,
             username: guildMember.displayName,
             avatarURL: message.author.displayAvatarURL({ forceStatic: true }),
-            files: files
+            files: files,
+            allowedMentions: { parse: [ AllowedMentionsTypes.User ] }
         });
     }
 
