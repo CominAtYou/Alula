@@ -1,6 +1,6 @@
-import { MongoClient, ServerApiVersion } from 'mongodb'
+import { MongoClient, ServerApiVersion } from 'mongodb';
 
-const mongoClient: MongoClient = new MongoClient("mongodb://localhost:27017", {
+const mongoClient = new MongoClient("mongodb://localhost:27017", {
     serverApi: {
         version: ServerApiVersion.v1,
         strict: true,
@@ -9,9 +9,17 @@ const mongoClient: MongoClient = new MongoClient("mongodb://localhost:27017", {
 });
 
 export async function createMongoConnection() {
-    await mongoClient.connect();
     try {
+        await mongoClient.connect();
         await mongoClient.db("main").command({ ping: 1 });
+
+        if (!(await mongoClient.db("main").listCollections({ name: "attachment_link_cache" }).hasNext())) {
+            const collection = await mongoClient.db("main").createCollection("attachment_link_cache");
+
+            await collection.createIndex({ expireAt: 1 }, { expireAfterSeconds: 0 })
+            await collection.createIndex({ channelId: 1, messageId: 1, attachmentSnowflake: 1, filename: 1 });
+        }
+
         console.log("Connected to MongoDB!");
         return mongoClient;
     }
@@ -23,5 +31,5 @@ export async function createMongoConnection() {
 }
 
 export function getMongoDatabase() {
-    return mongoClient.db("main");
-};
+    return mongoClient.db();
+}
