@@ -63,7 +63,11 @@ export default async function generateTranscript(details: ConversationDetails, m
             });
 
             const urlAttachments = message.content.match(/https:\/\/cdn\.discordapp\.com\/[^\s]*/g);
-            const filteredMessageContent = message.content.replace(/https:\/\/cdn\.discordapp\.com\/[^\s]*/g, "").replace(/\n+$/, "").replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>');
+            const filteredMessageContent = message.content
+                .replace(/https:\/\/cdn\.discordapp\.com\/[^\s]*/g, "")
+                .replace(/\n+$/, "")
+                .replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')
+                .replace(/\n/g, "<br>");
 
             if (urlAttachments) {
                 for (const attachment of urlAttachments) {
