@@ -1,5 +1,5 @@
 export default function splitMessage(str: string) {
-    const substrings = [];
+    const substrings: string[] = [];
     const length = 950;
     let start = 0;
 

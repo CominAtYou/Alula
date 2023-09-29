@@ -7,6 +7,7 @@ import Attachment from "../types/Attachment";
 import { ElementEntry } from "../types/ElementEntry";
 import { minify } from "html-minifier";
 import bytesToSize from "../util/fileSizes";
+import { ATTACHMENT_RETREIVAL_DOMAIN } from "../constants";
 
 const FILE_SVG = `<svg class="file-icon" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"></path></svg>`;
 
@@ -54,17 +55,18 @@ export default async function generateTranscript(details: ConversationDetails, m
             const attachments: Attachment[] = [];
 
             message.attachments.forEach(attachment => {
+                // expectedtype is the first part of the content type, e.g. image/png -> image
                 attachments.push({
                     name: attachment.name,
-                    url: attachment.url,
+                    url: `${ATTACHMENT_RETREIVAL_DOMAIN}/${message.channel.id}/${message.id}/${attachment.id}/${encodeURIComponent(attachment.name)}}?expectedtype=${encodeURIComponent(attachment.contentType.split("/")[0])}}`,
                     size: attachment.size,
                     contentType: attachment.contentType
                 });
             });
 
-            const urlAttachments = message.content.match(/https:\/\/cdn\.discordapp\.com\/[^\s]*/g);
+            const urlAttachments = message.content.match(new RegExp(`http://${ATTACHMENT_RETREIVAL_DOMAIN.replace(/\./g, '\\.')}/[^\s]*`, 'ig'));
             const filteredMessageContent = message.content
-                .replace(/https:\/\/cdn\.discordapp\.com\/[^\s]*/g, "")
+                .replace(new RegExp(`http://${ATTACHMENT_RETREIVAL_DOMAIN.replace(/\./g, '\\.')}/[^\s]*`, 'ig'), "")
                 .replace(/\n+$/, "")
                 .replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')
                 .replace(/\n/g, "<br>");

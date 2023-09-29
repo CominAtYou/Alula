@@ -1,4 +1,4 @@
-import { ChannelType, Client, GatewayIntentBits, Partials, TextChannel } from 'discord.js';
+import { ChannelType, Client, GatewayIntentBits, GuildTextBasedChannel, Partials } from 'discord.js';
 import handlePrivateMessage from './src/conversationHandlers/privateMessageHandler';
 import handleThreadMessage from './src/conversationHandlers/threadMessageHandler';
 import buttonHandler from './src/buttonHandlers/buttonHandler';
@@ -53,12 +53,18 @@ app.get("/*", async (req, res) => {
         return;
     }
 
-    const channel = await client.channels.fetch(path[0]) as TextChannel;
-    const message = await channel.messages.fetch(path[1]);
-    const attachment = message.attachments.get(path[2]);
+    try {
+        var channel = await client.channels.fetch(path[0]) as GuildTextBasedChannel;
+        var message = await channel.messages.fetch(path[1]);
+        var attachment = message.attachments.get(path[2]);
+    }
+    catch {
+        res.sendStatus(404);
+        return;
+    }
 
     if (!attachment) {
-        if (req.query.expectedtype === 'image') {
+        if ((req.query.expectedtype as string).toLowerCase() === 'image') {
             // todo: send 'not found' image
         }
         else {
@@ -68,9 +74,16 @@ app.get("/*", async (req, res) => {
     }
 
     const issued = parseInt(new URLSearchParams(attachment.url).get("is"));
-    const expiryDate = new Date(issued * 1000 + 1000 * 60 * 60 * 24);
 
-    await db.collection("attachment_links").insertOne({ expireAt: expiryDate, channelId: path[0], messageId: path[1], attachmentSnowflake: path[2], filename: attachment.name, attachmentLink: attachment.url });
+    await db.collection("attachment_links").insertOne({
+        expireAt: new Date(issued * 1000 + 1000 * 60 * 60 * 24),
+        channelId: path[0],
+        messageId: path[1],
+        attachmentSnowflake: path[2],
+        filename: attachment.name,
+        attachmentLink: attachment.url
+    });
+
     res.redirect(attachment.url);
 });
 
@@ -79,5 +92,5 @@ client.once('ready', async client => {
     await createMongoConnection();
 
     const server = http.createServer(app);
-    server.listen(8080, () => console.log("HTTP server ready!"));
+    server.listen(3000, () => console.log("HTTP server ready!"));
 });

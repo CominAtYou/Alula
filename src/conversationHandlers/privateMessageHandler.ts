@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ForumChannel, Message, ButtonStyle, ButtonBuilder, ComponentType, ButtonInteraction, EmbedBuilder, AllowedMentionsTypes } from "discord.js";
 import { getMongoDatabase } from "../db/mongoInstance";
-import { MODERATION_FORUM_CHANNEL_ID, NEW_THREAD_NOTIFICATION_ROLE_ID, MODMAIL_BAN_ROLE_ID } from "../constants";
+import { MODERATION_FORUM_CHANNEL_ID, NEW_THREAD_NOTIFICATION_ROLE_ID, MODMAIL_BAN_ROLE_ID, ATTACHMENT_RETREIVAL_DOMAIN } from "../constants";
 import { ActiveThread } from "../types/ActiveThread";
 import { ThreadType, stringToThreadType, threadTypeToId } from "../types/ThreadType";
 import splitMessage from "../util/splitMessage";
@@ -22,11 +22,14 @@ export default async function handlePrivateMessage(message: Message) {
         const webhook = forumChannelWebhooks.size > 0 ? forumChannelWebhooks.first() : await forumChannel.createWebhook({ name: "Modmail Webhook", reason: "No webhook was present for the forum channel." });
 
         const files = message.attachments.filter(attachment => attachment.size <= 25000000).map(attachment => attachment.url);
-        const leftoverFiles = [...message.attachments.values()].filter(attachment => attachment.size > 25000000).map(attachment => attachment.url);
+        const leftoverFiles = message.attachments.filter(attachment => attachment.size > 25000000);
 
         let messageContent = message.content.replace(/<:(\w+):\d+>/g, ":$1:");;
-        if (leftoverFiles.length > 0) {
-            messageContent += `\n\n${leftoverFiles.join("\n")}`;
+        if (leftoverFiles.size > 0) {
+            messageContent += `\n`;
+            leftoverFiles.forEach(attachment => {
+                messageContent += `\n${ATTACHMENT_RETREIVAL_DOMAIN}/${activeThread.receivingThreadId}/${message.id}/${attachment.id}/${encodeURIComponent(attachment.name)}?expectedtype=${attachment.contentType.split('/')[0]}`;
+            });
         }
 
         const messageContentSplit = splitMessage(messageContent);
@@ -123,11 +126,14 @@ export default async function handlePrivateMessage(message: Message) {
     });
 
     const files = message.attachments.filter(attachment => attachment.size <= 25000000).map(attachment => attachment.url);
-    const leftoverFiles = [...message.attachments.values()].filter(attachment => attachment.size > 25000000).map(attachment => attachment.url);
+    const leftoverFiles = message.attachments.filter(attachment => attachment.size > 25000000);
 
     let messageContent = message.content.replace(/<:(\w+):\d+>/g, ":$1:");;
-    if (leftoverFiles.length > 0) {
-        messageContent += `\n\n${leftoverFiles.join("\n")}`;
+    if (leftoverFiles.size > 0) {
+        messageContent += "\n";
+        leftoverFiles.forEach(attachment => {
+            messageContent += `\n${ATTACHMENT_RETREIVAL_DOMAIN}/${newThread.id}/${message.id}/${attachment.id}/${encodeURIComponent(attachment.name)}?expectedtype=${attachment.contentType.split('/')[0]}`;
+        });
     }
 
     const messageContentSplit = splitMessage(messageContent);

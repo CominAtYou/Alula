@@ -2,6 +2,7 @@ import { Message } from "discord.js";
 import { getMongoDatabase } from "../db/mongoInstance";
 import { ActiveThread } from "../types/ActiveThread";
 import splitMessage from "../util/splitMessage";
+import { ATTACHMENT_RETREIVAL_DOMAIN } from "../constants";
 
 export default async function handleThreadMessage(message: Message) {
     const db = getMongoDatabase();
@@ -12,11 +13,15 @@ export default async function handleThreadMessage(message: Message) {
     }
 
     const files = message.attachments.filter(attachment => attachment.size <= 25000000).map(attachment => attachment.url);
-    const leftoverFiles = [...message.attachments.values()].filter(attachment => attachment.size > 25000000).map(attachment => attachment.url);
+    const leftoverFiles = [...message.attachments.values()].filter(attachment => attachment.size > 25000000);
 
     let messageContent = message.content.replace(/<:(\w+):\d+>/g, ":$1:");
     if (leftoverFiles.length > 0) {
-        messageContent += `\n\n${leftoverFiles.join("\n")}`;
+        messageContent += '\n';
+
+        leftoverFiles.forEach(attachment => {
+            messageContent += `\n${ATTACHMENT_RETREIVAL_DOMAIN}/${message.channel.id}/${message.id}/${attachment.id}/${encodeURIComponent(attachment.name)}?expectedtype=${attachment.contentType.split('/')[0]}`;
+        });
     }
 
     const user = await message.client.users.fetch(activeThread.userId);
@@ -32,7 +37,7 @@ export default async function handleThreadMessage(message: Message) {
 
     if (messageContentSplit.length === 0) {
         userDMChannel.send({
-            content: (activeThread.areModeratorsHidden ? `**Staff Member**: ` : `**@${message.author.username}**: `),
+            content: (activeThread.areModeratorsHidden ? `**Staff Member**: ` : `**@${message.author.username}**: `) + messageContent,
             files: files
         });
     }
