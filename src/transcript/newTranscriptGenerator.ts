@@ -64,9 +64,9 @@ export default async function generateTranscript(details: ConversationDetails, m
                 });
             });
 
-            const urlAttachments = message.content.match(new RegExp(`http://${ATTACHMENT_RETREIVAL_DOMAIN.replace(/\./g, '\\.')}/[^\s]*`, 'ig'));
+            const urlAttachments = message.content.match(new RegExp(`${ATTACHMENT_RETREIVAL_DOMAIN.replace(/\./g, '\\.')}/[^\s]*`, 'ig'));
             const filteredMessageContent = message.content
-                .replace(new RegExp(`http://${ATTACHMENT_RETREIVAL_DOMAIN.replace(/\./g, '\\.')}/[^\s]*`, 'ig'), "")
+                .replace(new RegExp(`${ATTACHMENT_RETREIVAL_DOMAIN.replace(/\./g, '\\.')}/[^\s]*`, 'ig'), "")
                 .replace(/\n+$/, "")
                 .replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')
                 .replace(/\n/g, "<br>");
