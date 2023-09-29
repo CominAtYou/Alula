@@ -31,5 +31,5 @@ export async function createMongoConnection() {
 }
 
 export function getMongoDatabase() {
-    return mongoClient.db();
+    return mongoClient.db("main");
 }
