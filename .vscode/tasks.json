@@ -4,7 +4,12 @@
         {
             "label": "Compile TypeScript",
             "command": "tsc",
-            "type": "shell"
+            "type": "shell",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         }
     ]
 }
