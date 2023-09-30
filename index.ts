@@ -56,16 +56,22 @@ app.get("/*", async (req, res) => {
     try {
         var channel = await client.channels.fetch(path[0]) as GuildTextBasedChannel;
         var message = await channel.messages.fetch(path[1]);
-        var attachment = message.attachments.get(path[2]);
     }
     catch (e) {
-        res.sendStatus(404);
+        if ((req.query.expectedtype as string).toLowerCase() === 'image') {
+            res.sendFile("image_not_found.png", { root: `${process.cwd()}/src/assets` });
+        }
+        else {
+            res.sendStatus(404);
+        }
         return;
     }
 
+    const attachment = message.attachments.get(path[2]);
+
     if (!attachment) {
         if ((req.query.expectedtype as string).toLowerCase() === 'image') {
-            // todo: send 'not found' image
+            res.sendFile("image_not_found.png", { root: `${process.cwd()}/src/assets` });
         }
         else {
             res.sendStatus(404);
