@@ -8,6 +8,8 @@ import { ElementEntry } from "../types/ElementEntry";
 import { minify } from "html-minifier";
 import bytesToSize from "../util/fileSizes";
 import { ATTACHMENT_RETREIVAL_DOMAIN } from "../constants";
+import { getMongoDatabase } from "../db/mongoInstance";
+import { ActiveThread } from "../types/ActiveThread";
 
 const FILE_SVG = `<svg class="file-icon" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"></path></svg>`;
 
@@ -65,8 +67,35 @@ export default async function generateTranscript(details: ConversationDetails, m
             });
 
             const urlAttachments = message.content.match(/https:\/\/cdn\.discordapp\.com\/[^\s]*/g) || [];
-            const filteredMessageContent = message.content
-                .replace(/https:\/\/cdn\.discordapp\.com\/[^\s]*/g, "")
+            let filteredMessageContent = message.content;
+
+            for (let k = 0; k < urlAttachments.length; k++) {
+                const attachment = urlAttachments[k];
+                const path = attachment.split("/");
+                const filename = path.pop();
+                const attachmentSnowflake = path.pop();
+                const channelId = path.pop();
+
+                let expectedType = "";
+                if (filename.endsWith(".png") || filename.endsWith(".jpg") || filename.endsWith(".jpeg") || filename.endsWith(".gif") || filename.endsWith(".webp")) {
+                    expectedType = "image";
+                }
+                else if (filename.endsWith(".mp4") || filename.endsWith(".mov") || filename.endsWith(".webm") || filename.endsWith(".wmv")) {
+                    expectedType = "video";
+                }
+                else {
+                    expectedType = "any";
+                }
+
+                const activeThread = await getMongoDatabase().collection<ActiveThread>("active_threads").findOne({ webhookMessageMap: { $elemMatch: { webhookMessageId: message.id } } });
+                const messageId = activeThread ? activeThread.webhookMessageMap.find(map => map.webhookMessageId === message.id).originalMessageId : message.id;
+
+                filteredMessageContent = filteredMessageContent.replace(attachment, "");
+
+                urlAttachments[k] = `${ATTACHMENT_RETREIVAL_DOMAIN}/${channelId}/${messageId}/${attachmentSnowflake}/${encodeURIComponent(filename)}?expectedtype=${encodeURIComponent(expectedType)}`
+            }
+
+            filteredMessageContent = filteredMessageContent
                 .replace(/\n+$/, "")
                 .replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')
                 .replace(/\n/g, "<br>");
@@ -79,7 +108,7 @@ export default async function generateTranscript(details: ConversationDetails, m
 
                     attachments.push({
                         name: attachment.split("/").pop(),
-                        url: attachment.replace("cdn.discordapp.com", "alula.comin.one").replace("/attachments", `/${side === 'left' ? details.creator.dmChannel.id : message.channel.id}`).split("?")[0] + `?expectedtype=${encodeURIComponent(contentType.split("/")[0])}`,
+                        url: attachment,
                         size: parseInt(size),
                         contentType: contentType
                     });
@@ -87,7 +116,7 @@ export default async function generateTranscript(details: ConversationDetails, m
                 catch {
                     attachments.push({
                         name: attachment.split("/").pop(),
-                        url: attachment.replace("cdn.discordapp.com", "alula.comin.one").replace("/attachments", `/${side === 'left' ? details.creator.dmChannel.id : message.channel.id}`).split("?")[0] + `?expectedtype=any`,
+                        url: attachment,
                         size: 0,
                         contentType: "application/octet-stream"
                     });

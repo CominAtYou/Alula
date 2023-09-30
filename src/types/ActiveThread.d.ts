@@ -5,4 +5,5 @@ export interface ActiveThread {
     receivingThreadId: string;
     type: ThreadType;
     areModeratorsHidden: boolean;
+    webhookMessageMap: { webhookMessageId: string, originalMessageId: string }[]
 }

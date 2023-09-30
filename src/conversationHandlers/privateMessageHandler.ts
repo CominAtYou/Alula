@@ -34,7 +34,7 @@ export default async function handlePrivateMessage(message: Message) {
 
         const messageContentSplit = splitMessage(messageContent);
         for (let i = 0; i < messageContentSplit.length; i++) {
-            webhook.send({
+            const result = await webhook.send({
                 threadId: activeThread.receivingThreadId,
                 content: messageContentSplit[i],
                 username: guildMember.displayName,
@@ -42,16 +42,20 @@ export default async function handlePrivateMessage(message: Message) {
                 files: i === messageContentSplit.length - 1 ? files : [],
                 allowedMentions: { parse: [ AllowedMentionsTypes.User ] }
             });
+
+            await db.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
         }
 
         if (messageContentSplit.length === 0) {
-            webhook.send({
+            const result = await webhook.send({
                 threadId: activeThread.receivingThreadId,
                 username: guildMember.displayName,
                 avatarURL: message.author.displayAvatarURL({ forceStatic: true }),
                 files: files,
                 allowedMentions: { parse: [ AllowedMentionsTypes.User ] }
             });
+
+            await db.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
         }
 
         return;
@@ -122,7 +126,8 @@ export default async function handlePrivateMessage(message: Message) {
         userId: message.author.id,
         receivingThreadId: newThread.id,
         type: threadType,
-        areModeratorsHidden: false
+        areModeratorsHidden: false,
+        webhookMessageMap: []
     });
 
     const files = message.attachments.filter(attachment => attachment.size <= 25000000).map(attachment => attachment.url);
@@ -138,7 +143,7 @@ export default async function handlePrivateMessage(message: Message) {
 
     const messageContentSplit = splitMessage(messageContent);
     for (let i = 0; i < messageContentSplit.length; i++) {
-        webhook.send({
+        const result = await webhook.send({
             threadId: newThread.id,
             content: messageContentSplit[i],
             username: guildMember.displayName,
@@ -146,16 +151,20 @@ export default async function handlePrivateMessage(message: Message) {
             files: i === messageContentSplit.length - 1 ? files : [],
             allowedMentions: { parse: [ AllowedMentionsTypes.User ] }
         });
+
+        await db.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
     }
 
     if (messageContentSplit.length === 0) {
-        webhook.send({
+        const result = await webhook.send({
             threadId: newThread.id,
             username: guildMember.displayName,
             avatarURL: message.author.displayAvatarURL({ forceStatic: true }),
             files: files,
             allowedMentions: { parse: [ AllowedMentionsTypes.User ] }
         });
+
+        await db.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
     }
 
     mailTypeMessage.edit({
