@@ -20,7 +20,7 @@ export default async function handleThreadMessage(message: Message) {
         messageContent += '\n';
 
         leftoverFiles.forEach(attachment => {
-            messageContent += `\n${ATTACHMENT_RETREIVAL_DOMAIN}/${message.channel.id}/${message.id}/${attachment.id}/${encodeURIComponent(attachment.name)}?expectedtype=${attachment.contentType.split('/')[0]}`;
+            messageContent += `\n${attachment.url}`;
         });
     }
 

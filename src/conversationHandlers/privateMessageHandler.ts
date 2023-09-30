@@ -28,7 +28,7 @@ export default async function handlePrivateMessage(message: Message) {
         if (leftoverFiles.size > 0) {
             messageContent += `\n`;
             leftoverFiles.forEach(attachment => {
-                messageContent += `\n${ATTACHMENT_RETREIVAL_DOMAIN}/${message.channel.id}/${message.id}/${attachment.id}/${encodeURIComponent(attachment.name)}?expectedtype=${attachment.contentType.split('/')[0]}`;
+                messageContent += `\n${attachment.url}`;
             });
         }
 
@@ -132,7 +132,7 @@ export default async function handlePrivateMessage(message: Message) {
     if (leftoverFiles.size > 0) {
         messageContent += "\n";
         leftoverFiles.forEach(attachment => {
-            messageContent += `\n${ATTACHMENT_RETREIVAL_DOMAIN}/${message.channel.id}/${message.id}/${attachment.id}/${encodeURIComponent(attachment.name)}?expectedtype=${attachment.contentType.split('/')[0]}`;
+            messageContent += `\n${attachment.url}`;
         });
     }
 

@@ -64,35 +64,33 @@ export default async function generateTranscript(details: ConversationDetails, m
                 });
             });
 
-            const urlAttachments = message.content.match(new RegExp(`${ATTACHMENT_RETREIVAL_DOMAIN.replace(/\./g, '\\.')}/[^\s]*`, 'ig'));
+            const urlAttachments = message.content.match(/https:\/\/cdn\.discordapp\.com\/[^\s]*/g) || [];
             const filteredMessageContent = message.content
-                .replace(new RegExp(`${ATTACHMENT_RETREIVAL_DOMAIN.replace(/\./g, '\\.')}/[^\s]*`, 'ig'), "")
+                .replace(/https:\/\/cdn\.discordapp\.com\/[^\s]*/g, "")
                 .replace(/\n+$/, "")
                 .replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')
                 .replace(/\n/g, "<br>");
 
-            if (urlAttachments) {
-                for (const attachment of urlAttachments) {
-                    try {
-                        const data = await fetch(attachment, { method: "HEAD" });
-                        const contentType = data.headers.get("Content-Type");
-                        const size = data.headers.get("Content-Length");
+            for (const attachment of urlAttachments) {
+                try {
+                    const data = await fetch(attachment, { method: "HEAD" });
+                    const contentType = data.headers.get("Content-Type");
+                    const size = data.headers.get("Content-Length");
 
-                        attachments.push({
-                            name: attachment.split("/").pop(),
-                            url: attachment,
-                            size: parseInt(size),
-                            contentType: contentType
-                        });
-                    }
-                    catch {
-                        attachments.push({
-                            name: attachment.split("/").pop(),
-                            url: attachment,
-                            size: 0,
-                            contentType: "application/octet-stream"
-                        });
-                    }
+                    attachments.push({
+                        name: attachment.split("/").pop(),
+                        url: attachment.replace("cdn.discordapp.com", "alula.comin.one").replace("/attachments", `/${side === 'left' ? details.creator.dmChannel.id : message.channel.id}`).split("?")[0] + `?expectedtype=${encodeURIComponent(contentType.split("/")[0])}`,
+                        size: parseInt(size),
+                        contentType: contentType
+                    });
+                }
+                catch {
+                    attachments.push({
+                        name: attachment.split("/").pop(),
+                        url: attachment.replace("cdn.discordapp.com", "alula.comin.one").replace("/attachments", `/${side === 'left' ? details.creator.dmChannel.id : message.channel.id}`).split("?")[0] + `?expectedtype=any`,
+                        size: 0,
+                        contentType: "application/octet-stream"
+                    });
                 }
             }
 

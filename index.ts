@@ -58,7 +58,7 @@ app.get("/*", async (req, res) => {
         var message = await channel.messages.fetch(path[1]);
         var attachment = message.attachments.get(path[2]);
     }
-    catch {
+    catch (e) {
         res.sendStatus(404);
         return;
     }
