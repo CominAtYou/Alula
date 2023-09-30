@@ -70,7 +70,7 @@ export default async function generateTranscript(details: ConversationDetails, m
             let filteredMessageContent = message.content;
 
             for (let k = 0; k < urlAttachments.length; k++) {
-                const attachment = urlAttachments[k];
+                const attachment = urlAttachments[k].split("?")[0];
                 const path = attachment.split("/");
                 const filename = path.pop();
                 const attachmentSnowflake = path.pop();
