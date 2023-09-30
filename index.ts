@@ -73,10 +73,10 @@ app.get("/*", async (req, res) => {
         return;
     }
 
-    const issued = parseInt(new URLSearchParams(attachment.url).get("is"));
+    const expires = parseInt("0x" + new URLSearchParams(attachment.url).get("ex"));
 
     await db.collection("attachment_links").insertOne({
-        expireAt: new Date(issued * 1000 + 1000 * 60 * 60 * 24),
+        expireAt: new Date(expires),
         channelId: path[0],
         messageId: path[1],
         attachmentSnowflake: path[2],
