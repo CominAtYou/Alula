@@ -90,7 +90,7 @@ export default async function generateTranscript(details: ConversationDetails, m
                 const activeThread = await getMongoDatabase().collection<ActiveThread>("active_threads").findOne({ webhookMessageMap: { $elemMatch: { webhookMessageId: message.id } } });
                 const messageId = activeThread ? activeThread.webhookMessageMap.find(map => map.webhookMessageId === message.id).originalMessageId : message.id;
 
-                filteredMessageContent = filteredMessageContent.replace(attachment, "");
+                filteredMessageContent = filteredMessageContent.replace(urlAttachments[k], "");
 
                 urlAttachments[k] = `${ATTACHMENT_RETREIVAL_DOMAIN}/${channelId}/${messageId}/${attachmentSnowflake}/${encodeURIComponent(filename)}?expectedtype=${encodeURIComponent(expectedType)}`
             }
