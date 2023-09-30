@@ -60,7 +60,7 @@ export default async function generateTranscript(details: ConversationDetails, m
                 // expectedtype is the first part of the content type, e.g. image/png -> image
                 attachments.push({
                     name: attachment.name,
-                    url: `${ATTACHMENT_RETREIVAL_DOMAIN}/${message.channel.id}/${message.id}/${attachment.id}/${encodeURIComponent(attachment.name)}}?expectedtype=${encodeURIComponent(attachment.contentType.split("/")[0])}}`,
+                    url: `${ATTACHMENT_RETREIVAL_DOMAIN}/${message.channel.id}/${message.id}/${attachment.id}/${attachment.name}}?expectedtype=${attachment.contentType.split("/")[0]}`,
                     size: attachment.size,
                     contentType: attachment.contentType
                 });
@@ -87,12 +87,12 @@ export default async function generateTranscript(details: ConversationDetails, m
                     expectedType = "any";
                 }
 
-                const activeThread = await getMongoDatabase().collection<ActiveThread>("active_threads").findOne({ webhookMessageMap: { $elemMatch: { webhookMessageId: message.id } } });
-                const messageId = activeThread ? activeThread.webhookMessageMap.find(map => map.webhookMessageId === message.id).originalMessageId : message.id;
+                const activeThread = await getMongoDatabase().collection<ActiveThread>("active_threads").findOne({ receivingThreadId: details.threadId });
+                const webhookMessageMap = activeThread.webhookMessageMap.find(i => i.webhookMessageId === message.id);
+                const messageId = webhookMessageMap ? webhookMessageMap.originalMessageId : message.id;
 
                 filteredMessageContent = filteredMessageContent.replace(urlAttachments[k], "");
-
-                urlAttachments[k] = `${ATTACHMENT_RETREIVAL_DOMAIN}/${channelId}/${messageId}/${attachmentSnowflake}/${encodeURIComponent(filename)}?expectedtype=${encodeURIComponent(expectedType)}`
+                urlAttachments[k] = `${ATTACHMENT_RETREIVAL_DOMAIN}/${channelId}/${messageId}/${attachmentSnowflake}/${filename}?expectedtype=${expectedType}`
             }
 
             filteredMessageContent = filteredMessageContent
