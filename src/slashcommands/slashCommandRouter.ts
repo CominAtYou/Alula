@@ -2,7 +2,7 @@ import { CommandInteraction } from "discord.js";
 import anonymousSlashCommand from "./anonymous";
 
 const slashCommands = {
-    "anonymous": anonymousSlashCommand
+    "anon": anonymousSlashCommand
 }
 
 export default async function slashCommandRouter(interaction: CommandInteraction) {
