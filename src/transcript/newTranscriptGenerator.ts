@@ -7,14 +7,14 @@ import Attachment from "../types/Attachment";
 import { ElementEntry } from "../types/ElementEntry";
 import { minify } from "html-minifier";
 import bytesToSize from "../util/fileSizes";
-import { ATTACHMENT_RETREIVAL_DOMAIN } from "../constants";
+import { ATTACHMENT_RETREIVAL_DOMAIN, ANONYMOUS_COMMAND_PREFIX } from "../constants";
 import { getMongoDatabase } from "../db/mongoInstance";
 import { ActiveThread } from "../types/ActiveThread";
+import isModeratorCompletelyAnonymous from "../util/anonymousChecks";
 
 const FILE_SVG = `<svg class="file-icon" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"></path></svg>`;
 
-export default async function generateTranscript(details: ConversationDetails, messages: Message[], moderators: Collection<string, GuildMember>, hideModerators: boolean) {
-    const filteredMessages = messages.filter(message => message.type === MessageType.Default && (!message.author.bot || message.webhookId));
+export default async function generateTranscript(details: ConversationDetails, messages: Message[], moderators: Collection<string, GuildMember>, isReportForUser: boolean) {
 
     const activeThread = await getMongoDatabase().collection<ActiveThread>("active_threads").findOne({ receivingThreadId: details.threadId });;
     const template = await readFile("./src/transcript/transcript-template.html", 'utf-8');
@@ -22,22 +22,36 @@ export default async function generateTranscript(details: ConversationDetails, m
 
     const groups: Message[][] = [];
     let currentGroup: Message[] = [];
-    let currentAuthor = filteredMessages[0].webhookId || filteredMessages[0].author.id;
-    let isCurrentGroupAnonymous = activeThread.anonymousMessages.includes(filteredMessages[0].id);
+    let currentAuthor = messages[0].webhookId || messages[0].author.id;
+    let isCurrentGroupAnonymous = activeThread.anonymousMessages.includes(messages[0].id);
 
-    filteredMessages.forEach(message => {
-        const isCurrentMessageAnonymous = activeThread.anonymousMessages.includes(message.id);
+    if (isReportForUser) {
+        messages.forEach(message => {
+            const isCurrentMessageAnonymous = activeThread.anonymousMessages.includes(message.id);
 
-        if (((message.webhookId || message.author.id) === currentAuthor) && (isCurrentMessageAnonymous === isCurrentGroupAnonymous)) {
-            currentGroup.push(message);
-        }
-        else {
-            groups.push(currentGroup);
-            currentGroup = [message];
-            currentAuthor = message.webhookId || message.author.id;
-            isCurrentGroupAnonymous = activeThread.anonymousMessages.includes(message.id);
-        }
-    });
+            if (((message.webhookId || message.author.id) === currentAuthor) && (isCurrentMessageAnonymous === isCurrentGroupAnonymous)) {
+                currentGroup.push(message);
+            }
+            else {
+                groups.push(currentGroup);
+                currentGroup = [message];
+                currentAuthor = message.webhookId || message.author.id;
+                isCurrentGroupAnonymous = activeThread.anonymousMessages.includes(message.id);
+            }
+        });
+    }
+    else {
+        messages.forEach(message => {
+            if ((message.webhookId || message.author.id) === currentAuthor) {
+                currentGroup.push(message);
+            }
+            else {
+                groups.push(currentGroup);
+                currentGroup = [message];
+                currentAuthor = message.webhookId || message.author.id;
+            }
+        });
+    }
 
     groups.push(currentGroup);
 
@@ -51,7 +65,7 @@ export default async function generateTranscript(details: ConversationDetails, m
         if (side === 'left') {
             author = { username: details.creator.username, avatarURL: details.creator.displayAvatarURL({ extension: 'png', size: 128, forceStatic: true }) };
         }
-        else if (side === 'right' && activeThread.anonymousMessages.includes(currentGroup[0].id)) {
+        else if (side === 'right' && isReportForUser && activeThread.anonymousMessages.includes(currentGroup[0].id)) {
             author = { username: "Staff Member", avatarURL: "https://cdn.discordapp.com/embed/avatars/0.png" };
         }
         else {
@@ -103,7 +117,8 @@ export default async function generateTranscript(details: ConversationDetails, m
             filteredMessageContent = filteredMessageContent
                 .replace(/\n+$/, "")
                 .replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')
-                .replace(/\n/g, "<br>");
+                .replace(/\n/g, "<br>")
+                .replace(new RegExp(`^${ANONYMOUS_COMMAND_PREFIX}identity `), "");
 
             const mentions = filteredMessageContent.match(/<@[#&]?[0-9]{17,}>/g) || [];
 
@@ -255,19 +270,21 @@ export default async function generateTranscript(details: ConversationDetails, m
     const visibleModerators: GuildMember[] = [];
 
     for (let i = 0; i < moderators.size; i++) {
-        const moderator = moderators.at(i);
-        const message = messages.find(message => message.author.id === moderator.id && !activeThread.anonymousMessages.includes(message.id));
-
-        if (message) {
-            visibleModerators.push(moderator);
+        if (!isModeratorCompletelyAnonymous(moderators.at(i).id, messages, activeThread.anonymousMessages)) {
+            visibleModerators.push(moderators.at(i));
         }
     }
 
-    if (visibleModerators.some(moderator => moderator.id === details.closerId)) {
-        $("#conversation-closer").text(`@${details.closerUsername}`);
+    if (isReportForUser) {
+        if (!isModeratorCompletelyAnonymous(details.closerId, messages, activeThread.anonymousMessages)) {
+            $("#conversation-closer").text(`@${details.closerUsername}`);
+        }
+        else {
+            $("#conversation-closer-container").remove();
+        }
     }
     else {
-        $("#conversation-closer-container").remove();
+        $("#conversation-closer").text(`@${details.closerUsername}`);
     }
 
     if (visibleModerators.length === 0) {

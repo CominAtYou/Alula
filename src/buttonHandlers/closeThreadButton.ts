@@ -1,9 +1,10 @@
-import { AttachmentBuilder, ButtonInteraction, EmbedBuilder, TextChannel, ThreadChannel } from "discord.js";
+import { AttachmentBuilder, ButtonInteraction, EmbedBuilder, MessageType, TextChannel, ThreadChannel } from "discord.js";
 import { getMongoDatabase } from "../db/mongoInstance";
 import { ActiveThread } from "../types/ActiveThread";
 import generateTranscript from "../transcript/newTranscriptGenerator";
 import ConversationDetails from "../types/ConversationDetails";
 import { MODMAIL_LOG_CHANNEL_ID } from "../constants";
+import isModeratorCompletelyAnonymous from "../util/anonymousChecks";
 
 export default async function closeThreadButtonHandler(interaction: ButtonInteraction) {
     const message = interaction.message;
@@ -29,11 +30,12 @@ export default async function closeThreadButtonHandler(interaction: ButtonIntera
         creator: user
     }
 
-    const threadMessages = Array.from((await thread.messages.fetch()).values()).reverse();
+    const threadMessages = Array.from((await thread.messages.fetch()).values()).reverse().filter(message => message.type === MessageType.Default && (!message.author.bot || message.webhookId));
+    const attendingModerators = thread.guildMembers.filter(member => !member.user.bot);
 
-    const moderatorTranscript = await generateTranscript(threadDetails, threadMessages, thread.guildMembers.filter(member => !member.user.bot), false);
-    if (activeThread.areModeratorsHidden) {
-        var userTranscript = await generateTranscript(threadDetails, threadMessages, thread.guildMembers.filter(member => !member.user.bot), true);
+    const moderatorTranscript = await generateTranscript(threadDetails, threadMessages, attendingModerators, false);
+    if (activeThread.anonymousMessages.length > 0) {
+        var userTranscript = await generateTranscript(threadDetails, threadMessages, attendingModerators, true);
     }
 
     const modTranscript = [new AttachmentBuilder(Buffer.from(moderatorTranscript)).setName(`transcript-${user.username}-${thread.id}.html`)];
@@ -44,10 +46,11 @@ export default async function closeThreadButtonHandler(interaction: ButtonIntera
     });
 
     await thread.setArchived(true);
+    const isCloserAnonymous = isModeratorCompletelyAnonymous(interaction.user.id, threadMessages, activeThread.anonymousMessages);
 
     await userDMChannel.send({
-        content: `Your thread has been closed by ${activeThread.areModeratorsHidden ? "a moderator" : `@${interaction.user.username}`}. Send another message to open a new thread.`,
-        files: [new AttachmentBuilder(Buffer.from(activeThread.areModeratorsHidden ? userTranscript : moderatorTranscript)).setName(`transcript-${user.username}-${thread.id}-${activeThread.areModeratorsHidden ? "_ab" : ""}.html`)]
+        content: `Your thread has been closed by ${isCloserAnonymous ? "a moderator" : `@${interaction.user.username}`}. Send another message to open a new thread.`,
+        files: [new AttachmentBuilder(Buffer.from(activeThread.anonymousMessages.length > 0 ? userTranscript : moderatorTranscript)).setName(`transcript-${user.username}-${thread.id}-${activeThread.anonymousMessages.length > 0 ? "ab" : ""}.html`)]
     });
 
     let membersInThread = "";

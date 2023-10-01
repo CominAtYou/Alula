@@ -31,20 +31,20 @@ export default async function handleThreadMessage(message: Message) {
         isCurrentMessageAnonymous = !isCurrentMessageAnonymous;
     }
 
+    if (isCurrentMessageAnonymous) {
+        await db.collection<ActiveThread>("active_threads").updateOne({ receivingThreadId: message.channel.id }, { $push: { anonymousMessages: message.id } });
+    }
+
     const user = await message.client.users.fetch(activeThread.userId);
     const userDMChannel = await user.createDM();
     const messageContentSplit = splitMessage(messageContent);
 
-    const anonymousMessageIds: string[] = [];
+
     for (let i = 0; i < messageContentSplit.length; i++) {
         const newMessage = await userDMChannel.send({
             content: (isCurrentMessageAnonymous ? `**Staff Member**: ` : `**@${message.author.username}**: `) + messageContentSplit[i],
             files: i === messageContentSplit.length - 1 ? files : []
         });
-
-        if (isCurrentMessageAnonymous) {
-            anonymousMessageIds.push(newMessage.id);
-        }
     }
 
     if (messageContentSplit.length === 0) {
@@ -52,13 +52,5 @@ export default async function handleThreadMessage(message: Message) {
             content: (isCurrentMessageAnonymous ? `**Staff Member**: ` : `**@${message.author.username}**: `) + messageContent,
             files: files
         });
-
-        if (isCurrentMessageAnonymous) {
-            anonymousMessageIds.push(newMessage.id);
-        }
-    }
-
-    if (anonymousMessageIds.length > 0) {
-        await db.collection<ActiveThread>("active_threads").updateOne({ receivingThreadId: message.channel.id }, { $push: { anonymousMessages: { $each: anonymousMessageIds } } });
     }
 }
