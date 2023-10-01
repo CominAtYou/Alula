@@ -108,7 +108,7 @@ export default async function generateTranscript(details: ConversationDetails, m
                 .replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')
                 .replace(/\n/g, "<br>");
 
-            const mentions = filteredMessageContent.match(/<@[#&]?[0-9]{17,}>/g);
+            const mentions = filteredMessageContent.match(/<@[#&]?[0-9]{17,}>/g) || [];
 
             for (let k = 0; k < mentions.length; k++) {
                 const mention = mentions[k];
