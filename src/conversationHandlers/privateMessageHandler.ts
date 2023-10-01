@@ -126,7 +126,7 @@ export default async function handlePrivateMessage(message: Message) {
         userId: message.author.id,
         receivingThreadId: newThread.id,
         type: threadType,
-        areModeratorsHidden: false,
+        areModeratorsHidden: true,
         webhookMessageMap: [],
         anonymousMessages: []
     });

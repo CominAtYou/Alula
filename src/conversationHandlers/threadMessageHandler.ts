@@ -33,6 +33,8 @@ export default async function handleThreadMessage(message: Message) {
     if (message.content.startsWith(`${ANONYMOUS_COMMAND_PREFIX}identity `)) {
         messageContent = message.content.replace(`${ANONYMOUS_COMMAND_PREFIX}identity `, "");
         isCurrentMessageAnonymous = !isCurrentMessageAnonymous;
+
+        await getMongoDatabase().collection<ActiveThread>("active_threads").updateOne({ receivingThreadId: message.channel.id }, { $set: { areModeratorsHidden: isCurrentMessageAnonymous } });
     }
 
     const anonymousMessageIds: string[] = [];
