@@ -2,7 +2,7 @@ import { Message } from "discord.js";
 import { getMongoDatabase } from "../db/mongoInstance";
 import { ActiveThread } from "../types/ActiveThread";
 import splitMessage from "../util/splitMessage";
-import { ATTACHMENT_RETREIVAL_DOMAIN } from "../constants";
+import { ANONYMOUS_COMMAND_PREFIX } from "../constants";
 
 export default async function handleThreadMessage(message: Message) {
     const db = getMongoDatabase();
@@ -28,17 +28,37 @@ export default async function handleThreadMessage(message: Message) {
     const userDMChannel = await user.createDM();
     const messageContentSplit = splitMessage(messageContent);
 
+    let isCurrentMessageAnonymous = activeThread.areModeratorsHidden;
+
+    if (message.content.startsWith(`${ANONYMOUS_COMMAND_PREFIX}identity `)) {
+        messageContent = message.content.replace(`${ANONYMOUS_COMMAND_PREFIX}identity `, "");
+        isCurrentMessageAnonymous = !isCurrentMessageAnonymous;
+    }
+
+    const anonymousMessageIds: string[] = [];
     for (let i = 0; i < messageContentSplit.length; i++) {
-        userDMChannel.send({
-            content: (activeThread.areModeratorsHidden ? `**Staff Member**: ` : `**@${message.author.username}**: `) + messageContentSplit[i],
+        const newMessage = await userDMChannel.send({
+            content: (isCurrentMessageAnonymous ? `**Staff Member**: ` : `**@${message.author.username}**: `) + messageContentSplit[i],
             files: i === messageContentSplit.length - 1 ? files : []
         });
+
+        if (isCurrentMessageAnonymous) {
+            anonymousMessageIds.push(newMessage.id);
+        }
     }
 
     if (messageContentSplit.length === 0) {
-        userDMChannel.send({
-            content: (activeThread.areModeratorsHidden ? `**Staff Member**: ` : `**@${message.author.username}**: `) + messageContent,
+        const newMessage = await userDMChannel.send({
+            content: (isCurrentMessageAnonymous ? `**Staff Member**: ` : `**@${message.author.username}**: `) + messageContent,
             files: files
         });
+
+        if (isCurrentMessageAnonymous) {
+            anonymousMessageIds.push(newMessage.id);
+        }
+    }
+
+    if (anonymousMessageIds.length > 0) {
+        await db.collection<ActiveThread>("active_threads").updateOne({ receivingThreadId: message.channel.id }, { $push: { anonymousMessages: { $each: anonymousMessageIds } } });
     }
 }

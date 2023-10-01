@@ -8,5 +8,6 @@ export default interface ConversationDetails {
     opened: Date;
     closed: Date;
     closerUsername: string;
+    closerId: string;
     creator: User;
 }

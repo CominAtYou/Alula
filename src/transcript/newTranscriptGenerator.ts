@@ -16,20 +16,29 @@ const FILE_SVG = `<svg class="file-icon" xmlns="http://www.w3.org/2000/svg" heig
 export default async function generateTranscript(details: ConversationDetails, messages: Message[], moderators: Collection<string, GuildMember>, hideModerators: boolean) {
     const filteredMessages = messages.filter(message => message.type === MessageType.Default && (!message.author.bot || message.webhookId));
 
+    const activeThread = await getMongoDatabase().collection<ActiveThread>("active_threads").findOne({ receivingThreadId: details.threadId });;
     const template = await readFile("./src/transcript/transcript-template.html", 'utf-8');
     const $ = cheerio.load(template);
+
     const groups: Message[][] = [];
-    let currentAuthor = filteredMessages[0].webhookId || filteredMessages[0];
     let currentGroup: Message[] = [];
+    let isCurrentGroupAnonymous = false;
 
     filteredMessages.forEach(message => {
-        if ((message.webhookId || message.author.id) === currentAuthor) {
+        const isMessageAnonymous = activeThread.anonymousMessages.includes(message.id);
+
+        // Check if the message has the same author/webhookId as the current group,
+        // and whether both the message and the current group are either anonymous or non-anonymous.
+        const isSameGroup = ((message.webhookId || message.author.id) === (currentGroup[0].webhookId || currentGroup[0].author.id)) && isMessageAnonymous === isCurrentGroupAnonymous;
+
+        if (isSameGroup) {
             currentGroup.push(message);
-        }
-        else {
-            groups.push(currentGroup);
+        } else {
+            if (currentGroup.length > 0) {
+                groups.push(currentGroup);
+            }
             currentGroup = [message];
-            currentAuthor = message.webhookId || message.author.id;
+            isCurrentGroupAnonymous = isMessageAnonymous;
         }
     });
 
@@ -45,7 +54,7 @@ export default async function generateTranscript(details: ConversationDetails, m
         if (side === 'left') {
             author = { username: details.creator.username, avatarURL: details.creator.displayAvatarURL({ extension: 'png', size: 128, forceStatic: true }) };
         }
-        else if (side === 'right' && hideModerators) {
+        else if (side === 'right' && activeThread.anonymousMessages.includes(currentGroup[0].id)) {
             author = { username: "Staff Member", avatarURL: "https://cdn.discordapp.com/embed/avatars/0.png" };
         }
         else {
@@ -66,7 +75,7 @@ export default async function generateTranscript(details: ConversationDetails, m
                 });
             });
 
-            const urlAttachments = message.content.match(/https:\/\/cdn\.discordapp\.com\/[^\s]*/g) || [];
+            const urlAttachments = message.content.match(/https:\/\/(?:cdn\.discordapp\.com|media\.discordapp\.net)\/[^\s]*/) || [];
             let filteredMessageContent = message.content;
 
             for (let k = 0; k < urlAttachments.length; k++) {
@@ -87,7 +96,6 @@ export default async function generateTranscript(details: ConversationDetails, m
                     expectedType = "any";
                 }
 
-                const activeThread = await getMongoDatabase().collection<ActiveThread>("active_threads").findOne({ receivingThreadId: details.threadId });
                 const webhookMessageMap = activeThread.webhookMessageMap.find(i => i.webhookMessageId === message.id);
                 const messageId = webhookMessageMap ? webhookMessageMap.originalMessageId : message.id;
 
@@ -244,20 +252,34 @@ export default async function generateTranscript(details: ConversationDetails, m
     $("#conversation-opened").parent().append(`<div style="display: none;" id="conversation-opened-time">${details.opened.getTime()}</div>`);
     $("#conversation-closed").parent().append(`<div style="display: none;" id="conversation-closed-time">${details.closed.getTime()}</div>`);
 
-    if (hideModerators) {
-        $("#conversation-closer-container").remove();
-    }
-    else {
-        $("#conversation-closer").text(`@${details.closerUsername}`);
+    // for every moderator, check if they have a message in the messages array with an ID that isn't in the anonymousMessages array
+    // if they have a message that isn't in the anonymousMessages array, then they are not anonymous
+
+    const visibleModerators: GuildMember[] = [];
+
+    for (let i = 0; i < moderators.size; i++) {
+        const moderator = moderators.at(i);
+        const message = messages.find(message => message.author.id === moderator.id && !activeThread.anonymousMessages.includes(message.id));
+
+        if (message) {
+            visibleModerators.push(moderator);
+        }
     }
 
-    if (hideModerators) {
+    if (visibleModerators.some(moderator => moderator.id === details.closerId)) {
+        $("#conversation-closer").text(`@${details.closerUsername}`);
+    }
+    else {
+        $("#conversation-closer-container").remove();
+    }
+
+    if (visibleModerators.length === 0) {
         $("#attending-moderators").remove();
     }
     else {
         const moderatorElementsContainer = $("#conversation-details-moderators-content");
 
-        moderators.forEach(moderator => {
+        visibleModerators.forEach(moderator => {
             const moderatorElement = $(`<div class="conversation-details-moderator-entry"></div>`)
 
             const avatarContainer = $(`<div class="moderator-avatar-container"></div>`);

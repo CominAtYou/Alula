@@ -111,7 +111,7 @@ export default async function handlePrivateMessage(message: Message) {
         autoArchiveDuration: 1440,
         reason: "New modmail thread",
         message: {
-            content: `<@&${NEW_THREAD_NOTIFICATION_ROLE_ID}> <@${message.author.id}> (${message.author.id}) has started a new modmail thread.\nUse</anonymous:1155692109265903636> to hide the identity of moderators participating in this thread.`,
+            content: `<@&${NEW_THREAD_NOTIFICATION_ROLE_ID}> <@${message.author.id}> (${message.author.id}) has started a new modmail thread.\nUse </anonymous:1155692109265903636> to hide the identity of moderators participating in this thread.`,
         components: [
                 new ActionRowBuilder<ButtonBuilder>().addComponents(
                     new ButtonBuilder().setCustomId("close_thread").setLabel("Close Thread").setStyle(ButtonStyle.Danger).setEmoji("🔒")
@@ -127,7 +127,8 @@ export default async function handlePrivateMessage(message: Message) {
         receivingThreadId: newThread.id,
         type: threadType,
         areModeratorsHidden: false,
-        webhookMessageMap: []
+        webhookMessageMap: [],
+        anonymousMessages: []
     });
 
     const files = message.attachments.filter(attachment => attachment.size <= 25000000).map(attachment => attachment.url);

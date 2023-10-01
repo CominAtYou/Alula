@@ -25,6 +25,7 @@ export default async function closeThreadButtonHandler(interaction: ButtonIntera
         guild: thread.guild,
         closed: new Date(),
         closerUsername: interaction.user.username,
+        closerId: interaction.user.id,
         creator: user
     }
 
@@ -58,6 +59,7 @@ export default async function closeThreadButtonHandler(interaction: ButtonIntera
     membersInThread += `<@${user.id}> - @${user.username}`;
 
     const embed = new EmbedBuilder()
+        .setTitle("Thread Closed")
         .setAuthor({ name: user.username, iconURL: user.displayAvatarURL({ extension: 'png', forceStatic: true }) })
         .setColor("#007acc")
         .setFields([
