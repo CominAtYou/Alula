@@ -22,24 +22,22 @@ export default async function generateTranscript(details: ConversationDetails, m
 
     const groups: Message[][] = [];
     let currentGroup: Message[] = [];
-    let isCurrentGroupAnonymous = false;
+    let currentAuthor = filteredMessages[0].webhookId || filteredMessages[0].author.id;
+    let isCurrentGroupAnonymous = activeThread.anonymousMessages.includes(filteredMessages[0].id);
 
     filteredMessages.forEach(message => {
-        const isMessageAnonymous = activeThread.anonymousMessages.includes(message.id);
-
-        // Check if the message has the same author/webhookId as the current group,
-        // and whether both the message and the current group are either anonymous or non-anonymous.
-        const isSameGroup = currentGroup.length > 0 && ((message.webhookId || message.author.id) === (currentGroup[0].webhookId || currentGroup[0].author.id)) && isMessageAnonymous === isCurrentGroupAnonymous;
-
-        if (isSameGroup) {
+        const isCurrentMessageAnonymous = activeThread.anonymousMessages.includes(message.id);
+        if (((message.webhookId || message.author.id) === currentAuthor) && (isCurrentMessageAnonymous === isCurrentGroupAnonymous)) {
             currentGroup.push(message);
-        } else {
-            if (currentGroup.length > 0) {
-                groups.push(currentGroup);
-            }
-            currentGroup = [message];
-            isCurrentGroupAnonymous = isMessageAnonymous;
         }
+        else {
+            groups.push(currentGroup);
+            currentGroup = [message];
+            currentAuthor = message.webhookId || message.author.id;
+            isCurrentGroupAnonymous = activeThread.anonymousMessages.includes(message.id);
+        }
+
+        groups.push(currentGroup);
     });
 
     groups.push(currentGroup);
