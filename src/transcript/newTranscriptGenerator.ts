@@ -100,6 +100,43 @@ export default async function generateTranscript(details: ConversationDetails, m
                 .replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')
                 .replace(/\n/g, "<br>");
 
+            const mentions = filteredMessageContent.match(/<@[#&]?[0-9]{17,}>/g);
+
+            for (let k = 0; k < mentions.length; k++) {
+                const mention = mentions[k];
+
+                if (mention[2] === '&') {
+                    const roles = await details.guild.roles.fetch();
+                    try {
+                        const name = roles.find(role => role.id === mention.slice(3, -1)).name;
+                        filteredMessageContent = filteredMessageContent.replace(mention, `@${name}`);
+                    }
+                    catch {
+                        continue;
+                    }
+                }
+                else if (mention[2] === '#') {
+                    const channels = await details.guild.channels.fetch();
+                    try {
+                        const name = channels.find(channel => channel.id === mention.slice(3, -1)).name;
+                        filteredMessageContent = filteredMessageContent.replace(mention, `#${name}`);
+                    }
+                    catch {
+                        continue;
+                    }
+                }
+                else {
+                    const members = await details.guild.members.fetch();
+                    try {
+                        const name = members.find(member => member.id === mention.slice(2, -1)).displayName;
+                        filteredMessageContent = filteredMessageContent.replace(mention, `@${name}`);
+                    }
+                    catch {
+                        continue;
+                    }
+                }
+            }
+
             for (const attachment of urlAttachments) {
                 try {
                     const data = await fetch(attachment, { method: "HEAD" });
