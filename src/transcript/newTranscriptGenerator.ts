@@ -29,7 +29,7 @@ export default async function generateTranscript(details: ConversationDetails, m
 
         // Check if the message has the same author/webhookId as the current group,
         // and whether both the message and the current group are either anonymous or non-anonymous.
-        const isSameGroup = ((message.webhookId || message.author.id) === (currentGroup[0].webhookId || currentGroup[0].author.id)) && isMessageAnonymous === isCurrentGroupAnonymous;
+        const isSameGroup = currentGroup.length > 0 && ((message.webhookId || message.author.id) === (currentGroup[0].webhookId || currentGroup[0].author.id)) && isMessageAnonymous === isCurrentGroupAnonymous;
 
         if (isSameGroup) {
             currentGroup.push(message);
