@@ -27,6 +27,7 @@ export default async function generateTranscript(details: ConversationDetails, m
 
     filteredMessages.forEach(message => {
         const isCurrentMessageAnonymous = activeThread.anonymousMessages.includes(message.id);
+
         if (((message.webhookId || message.author.id) === currentAuthor) && (isCurrentMessageAnonymous === isCurrentGroupAnonymous)) {
             currentGroup.push(message);
         }
@@ -36,8 +37,6 @@ export default async function generateTranscript(details: ConversationDetails, m
             currentAuthor = message.webhookId || message.author.id;
             isCurrentGroupAnonymous = activeThread.anonymousMessages.includes(message.id);
         }
-
-        groups.push(currentGroup);
     });
 
     groups.push(currentGroup);
