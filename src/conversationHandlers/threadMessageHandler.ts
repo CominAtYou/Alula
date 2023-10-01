@@ -24,18 +24,16 @@ export default async function handleThreadMessage(message: Message) {
         });
     }
 
+    let isCurrentMessageAnonymous = activeThread.areModeratorsHidden;
+
+    if (messageContent.startsWith(`${ANONYMOUS_COMMAND_PREFIX}identity `)) {
+        messageContent = messageContent.replace(`${ANONYMOUS_COMMAND_PREFIX}identity `, "");
+        isCurrentMessageAnonymous = !isCurrentMessageAnonymous;
+    }
+
     const user = await message.client.users.fetch(activeThread.userId);
     const userDMChannel = await user.createDM();
     const messageContentSplit = splitMessage(messageContent);
-
-    let isCurrentMessageAnonymous = activeThread.areModeratorsHidden;
-
-    if (message.content.startsWith(`${ANONYMOUS_COMMAND_PREFIX}identity `)) {
-        messageContent = message.content.replace(`${ANONYMOUS_COMMAND_PREFIX}identity `, "");
-        isCurrentMessageAnonymous = !isCurrentMessageAnonymous;
-
-        await getMongoDatabase().collection<ActiveThread>("active_threads").updateOne({ receivingThreadId: message.channel.id }, { $set: { areModeratorsHidden: isCurrentMessageAnonymous } });
-    }
 
     const anonymousMessageIds: string[] = [];
     for (let i = 0; i < messageContentSplit.length; i++) {
