@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ForumChannel, Message, ButtonStyle, ButtonBuilder, ComponentType, ButtonInteraction, EmbedBuilder, AllowedMentionsTypes } from "discord.js";
 import { getMongoDatabase } from "../db/mongoInstance";
-import { MODERATION_FORUM_CHANNEL_ID, NEW_THREAD_NOTIFICATION_ROLE_ID, MODMAIL_BAN_ROLE_ID, ATTACHMENT_RETREIVAL_DOMAIN } from "../constants";
+import { MODERATION_FORUM_CHANNEL_ID, NEW_THREAD_NOTIFICATION_ROLE_ID, MODMAIL_BAN_ROLE_ID, ANONYMOUS_COMMAND_PREFIX } from "../constants";
 import { ActiveThread } from "../types/ActiveThread";
 import { ThreadType, stringToThreadType, threadTypeToId } from "../types/ThreadType";
 import splitMessage from "../util/splitMessage";
@@ -111,7 +111,7 @@ export default async function handlePrivateMessage(message: Message) {
         autoArchiveDuration: 1440,
         reason: "New modmail thread",
         message: {
-            content: `<@&${NEW_THREAD_NOTIFICATION_ROLE_ID}> <@${message.author.id}> (${message.author.id}) has started a new modmail thread.\nUse </anon:1158087318431867023> to hide or reveal the identity of moderators participating in this thread.`,
+            content: `<@&${NEW_THREAD_NOTIFICATION_ROLE_ID}> <@${message.author.id}> (${message.author.id}) has started a new modmail thread.\nUse </anon:1158087318431867023> to hide or reveal the identity of moderators participating in this thread.\n\`${ANONYMOUS_COMMAND_PREFIX}identity\` can be used to selectively reveal your identity if the thread is set to anonymous, or to hide your identity otherwise.`,
         components: [
                 new ActionRowBuilder<ButtonBuilder>().addComponents(
                     new ButtonBuilder().setCustomId("close_thread").setLabel("Close Thread").setStyle(ButtonStyle.Danger).setEmoji("🔒")
