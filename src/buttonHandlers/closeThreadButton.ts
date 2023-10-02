@@ -3,8 +3,9 @@ import { getMongoDatabase } from "../db/mongoInstance";
 import { ActiveThread } from "../types/ActiveThread";
 import generateTranscript from "../transcript/newTranscriptGenerator";
 import ConversationDetails from "../types/ConversationDetails";
-import { MODMAIL_LOG_CHANNEL_ID } from "../constants";
+import { MODERATION_MODMAIL_LOG_CHANNEL_ID, APPEALS_MODMAIL_LOG_CHANNEL_ID, DATA_MODMAIL_LOG_CHANNEL_ID } from "../constants";
 import isModeratorCompletelyAnonymous from "../util/anonymousChecks";
+import { ThreadType } from "../types/ThreadType";
 
 export default async function closeThreadButtonHandler(interaction: ButtonInteraction) {
     const message = interaction.message;
@@ -83,7 +84,9 @@ export default async function closeThreadButtonHandler(interaction: ButtonIntera
             }
         ]);
 
-    const logChannel = await interaction.client.channels.fetch(MODMAIL_LOG_CHANNEL_ID) as TextChannel;
+
+    const LOG_CHANNEL_ID = activeThread.type == ThreadType.MODERATION ? MODERATION_MODMAIL_LOG_CHANNEL_ID : (activeThread.type == ThreadType.APPEAL ? APPEALS_MODMAIL_LOG_CHANNEL_ID : DATA_MODMAIL_LOG_CHANNEL_ID);
+    const logChannel = await interaction.client.channels.fetch(LOG_CHANNEL_ID) as TextChannel;
     await logChannel.send({ embeds: [embed], files: modTranscript });
 
     await db.collection<ActiveThread>("active_threads").deleteOne({ receivingThreadId: thread.id });
