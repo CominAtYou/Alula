@@ -63,13 +63,13 @@ export default async function generateTranscript(details: ConversationDetails, m
         let author: { username: string, avatarURL: string };
 
         if (side === 'left') {
-            author = { username: details.creator.username, avatarURL: details.creator.displayAvatarURL({ extension: 'png', size: 128, forceStatic: true }) };
+            author = { username: `@${details.creator.username}`, avatarURL: details.creator.displayAvatarURL({ extension: 'png', size: 128, forceStatic: true }) };
         }
         else if (side === 'right' && isReportForUser && activeThread.anonymousMessages.includes(currentGroup[0].id)) {
             author = { username: "Staff Member", avatarURL: "https://cdn.discordapp.com/embed/avatars/0.png" };
         }
         else {
-            author = { username: currentGroup[0].author.username, avatarURL: currentGroup[0].author.displayAvatarURL({ extension: 'png', size: 128, forceStatic: true }) };
+            author = { username: `@${currentGroup[0].author.username}`, avatarURL: currentGroup[0].author.displayAvatarURL({ extension: 'png', size: 128, forceStatic: true }) };
         }
 
         for (let j = 0; j < currentGroup.length; j++) {
@@ -192,7 +192,7 @@ export default async function generateTranscript(details: ConversationDetails, m
         }
 
         const messageElement = $(`<div class="chathead-${side}"></div>`);
-        messageElement.append(`<p class="message-details">@${author.username} &bull; </p>`);
+        messageElement.append(`<p class="message-details">${author.username} &bull; </p>`);
         messageElement.append(`<div style="display: none;" class="message-timestamp">${currentGroup[0].createdAt.getTime()}</div>`);
 
         for (let j = 0; j < elementList.length; j++) {
