@@ -1,4 +1,4 @@
-import { ChannelType, Client, GatewayIntentBits, GuildTextBasedChannel, Partials } from 'discord.js';
+import { ActivityType, ChannelType, Client, GatewayIntentBits, Partials } from 'discord.js';
 import handlePrivateMessage from './src/conversationHandlers/privateMessageHandler';
 import handleThreadMessage from './src/conversationHandlers/threadMessageHandler';
 import buttonHandler from './src/buttonHandlers/buttonHandler';
@@ -7,6 +7,7 @@ import { createMongoConnection, getMongoDatabase } from './src/db/mongoInstance'
 import slashCommandRouter from './src/slashcommands/slashCommandRouter';
 import express = require('express');
 import http = require('http');
+import attachmentRetreival from './src/webserver/attachmentRetreival';
 
 const app = express();
 
@@ -38,65 +39,14 @@ client.on('interactionCreate', async interaction => {
 client.login(DISCORD_BOT_TOKEN);
 
 app.get("/*", async (req, res) => {
-    const path = req.path.split("/").slice(1);
-
-    if (path.length !== 4 || !req.query.expectedtype) {
-        res.sendStatus(400);
-        return;
-    }
-
-    const db = getMongoDatabase();
-    const cachedLink = await db.collection("attachment_link_cache").findOne({ channelId: path[0], messageId: path[1], attachmentSnowflake: path[2], filename: decodeURIComponent(path[3]) });
-
-    if (cachedLink) {
-        res.redirect(cachedLink.attachmentLink);
-        return;
-    }
-
-    try {
-        var channel = await client.channels.fetch(path[0]) as GuildTextBasedChannel;
-        var message = await channel.messages.fetch(path[1]);
-    }
-    catch (e) {
-        if ((req.query.expectedtype as string).toLowerCase() === 'image') {
-            res.sendFile("image_not_found.png", { root: `${process.cwd()}/src/assets` });
-        }
-        else {
-            res.sendStatus(404);
-        }
-        return;
-    }
-
-    const attachment = message.attachments.get(path[2]);
-
-    if (!attachment) {
-        if ((req.query.expectedtype as string).toLowerCase() === 'image') {
-            res.sendFile("image_not_found.png", { root: `${process.cwd()}/src/assets` });
-        }
-        else {
-            res.sendStatus(404);
-        }
-        return;
-    }
-
-    const expires = parseInt("0x" + new URLSearchParams(attachment.url).get("ex"));
-
-    await db.collection("attachment_links").insertOne({
-        expireAt: new Date(expires),
-        channelId: path[0],
-        messageId: path[1],
-        attachmentSnowflake: path[2],
-        filename: attachment.name,
-        attachmentLink: attachment.url
-    });
-
-    res.redirect(attachment.url);
+    await attachmentRetreival(req, res, client);
 });
 
 client.once('ready', async client => {
     console.log(`Logged in as ${client.user.tag}!`);
     await createMongoConnection();
 
+    client.user.setActivity({ name: "Eating rocks since 2014", type: ActivityType.Playing });
     const server = http.createServer(app);
     server.listen(3000, () => console.log("HTTP server ready!"));
 });
