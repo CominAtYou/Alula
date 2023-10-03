@@ -269,10 +269,15 @@ export default async function generateTranscript(details: ConversationDetails, m
 
     const visibleModerators: GuildMember[] = [];
 
-    for (let i = 0; i < moderators.size; i++) {
-        if (!isModeratorCompletelyAnonymous(moderators.at(i).id, messages, activeThread.anonymousMessages)) {
-            visibleModerators.push(moderators.at(i));
+    if (isReportForUser) {
+        for (let i = 0; i < moderators.size; i++) {
+            if (!isModeratorCompletelyAnonymous(moderators.at(i).id, messages, activeThread.anonymousMessages)) {
+                visibleModerators.push(moderators.at(i));
+            }
         }
+    }
+    else {
+        visibleModerators.push(...moderators.values());
     }
 
     if (isReportForUser) {
