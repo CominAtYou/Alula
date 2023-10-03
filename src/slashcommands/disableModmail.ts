@@ -6,12 +6,12 @@ export default async function disableModmail(interaction: ChatInputCommandIntera
     const newState = interaction.options.getBoolean("disabled");
     const config = mongoDatabase.collection<GuildConfig>(`guildconfigs`);
 
-    if (config.findOne({ guildId: interaction.guildId })) {
+    if (await config.findOne({ guildId: interaction.guildId })) {
         await config.updateOne({ guildId: interaction.guildId }, { $set: { modmailDisabled: newState } });
-        await interaction.reply(`New modmail threads have been ${newState ? "disabled" : "enabled"}`);
+        await interaction.reply(`New modmail threads have been ${newState ? "disabled" : "enabled"}.`);
     }
     else {
         await config.insertOne({ guildId: interaction.guildId, modmailDisabled: newState });
-        await interaction.reply(`New modmail threads have been ${newState ? "disabled" : "enabled"}`);
+        await interaction.reply(`New modmail threads have been ${newState ? "disabled" : "enabled"}.`);
     }
 }
