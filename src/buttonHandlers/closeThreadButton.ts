@@ -46,6 +46,7 @@ export default async function closeThreadButtonHandler(interaction: ButtonIntera
     });
 
     await thread.setArchived(true);
+    await thread.setLocked(true);
     const isCloserAnonymous = isModeratorCompletelyAnonymous(interaction.user.id, threadMessages, activeThread.anonymousMessages);
 
     await userDMChannel.send({
