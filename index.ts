@@ -51,7 +51,7 @@ client.once('ready', async client => {
     console.log(`Logged in as ${client.user.tag}!`);
     await createMongoConnection();
 
-    client.user.setActivity({ name: "Eating rocks since 2014", type: ActivityType.Playing });
+    client.user.setActivity({ name: "Eating rocks since 2014", type: ActivityType.Custom });
     const server = http.createServer(app);
     server.listen(3000, () => console.log("HTTP server ready!"));
 });
