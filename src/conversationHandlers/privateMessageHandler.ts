@@ -95,7 +95,7 @@ export default async function handlePrivateMessage(message: Message) {
         response = await mailTypeMessage.awaitMessageComponent<ComponentType.Button>({ time: 60000 });
     }
     catch {
-        mailTypeMessage.edit({ content: "Your session has expired. Re-send your initial message to try again.", components: [] });
+        mailTypeMessage.edit({ content: "Your session has expired. Re-send your initial message to try again.", components: [], embeds: [] });
         return;
     }
 
