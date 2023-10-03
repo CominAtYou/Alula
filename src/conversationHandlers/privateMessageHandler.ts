@@ -6,6 +6,12 @@ import { ThreadType, stringToThreadType, threadTypeToId } from "../types/ThreadT
 import splitMessage from "../util/splitMessage";
 import GuildConfig from "../types/GuildConfig";
 
+/**
+ * A list of users who are currently in the process of selecting a thread type.
+ * This exists to prevent the bot from sending multiple messages to the same user.
+ */
+const typeSelectionInProgressUsers: string[] = [];
+
 export default async function handlePrivateMessage(message: Message) {
     const activeThread = await mongoDatabase.collection<ActiveThread>("active_threads").findOne({ userId: message.author.id });
     const server = (await message.client.channels.fetch(MODERATION_FORUM_CHANNEL_ID) as ForumChannel).guild;
@@ -15,6 +21,8 @@ export default async function handlePrivateMessage(message: Message) {
         message.channel.send("Your modmail priveliges have been revoked by a staff member. If you believe that this is a mistake, please contact a staff member via other means.");
         return;
     }
+
+    if (typeSelectionInProgressUsers.includes(message.author.id)) return;
 
     if (activeThread) {
         const forumChannel = await message.client.channels.fetch(threadTypeToId[activeThread.type]) as ForumChannel;
@@ -99,10 +107,12 @@ export default async function handlePrivateMessage(message: Message) {
 
     let response: ButtonInteraction = null;
     try {
+        typeSelectionInProgressUsers.push(message.author.id);
         response = await mailTypeMessage.awaitMessageComponent<ComponentType.Button>({ time: 60000 });
     }
     catch {
-        mailTypeMessage.edit({ content: "Your session has expired. Re-send your initial message to try again.", components: [], embeds: [] });
+        await mailTypeMessage.edit({ content: "Your session has expired. Re-send your initial message to try again.", components: [], embeds: [] });
+        typeSelectionInProgressUsers.splice(typeSelectionInProgressUsers.indexOf(message.author.id), 1);
         return;
     }
 
