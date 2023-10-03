@@ -1,6 +1,6 @@
 import { Client, GuildTextBasedChannel } from "discord.js";
 import { Request, Response } from "express";
-import { getMongoDatabase } from "../db/mongoInstance";
+import { mongoDatabase } from "../db/mongoInstance";
 
 export default async function attachmentRetreival(req: Request, res: Response, client: Client) {
     const path = req.path.split("/").slice(1);
@@ -10,8 +10,7 @@ export default async function attachmentRetreival(req: Request, res: Response, c
         return;
     }
 
-    const db = getMongoDatabase();
-    const cachedLink = await db.collection("attachment_link_cache").findOne({ channelId: path[0], messageId: path[1], attachmentSnowflake: path[2], filename: decodeURIComponent(path[3]) });
+    const cachedLink = await mongoDatabase.collection("attachment_link_cache").findOne({ channelId: path[0], messageId: path[1], attachmentSnowflake: path[2], filename: decodeURIComponent(path[3]) });
 
     if (cachedLink) {
         res.redirect(cachedLink.attachmentLink);
@@ -46,7 +45,7 @@ export default async function attachmentRetreival(req: Request, res: Response, c
 
     const expires = parseInt("0x" + new URLSearchParams(attachment.url).get("ex"));
 
-    await db.collection("attachment_links").insertOne({
+    await mongoDatabase.collection("attachment_links").insertOne({
         expireAt: new Date(expires),
         channelId: path[0],
         messageId: path[1],

@@ -30,6 +30,4 @@ export async function createMongoConnection() {
     }
 }
 
-export function getMongoDatabase() {
-    return mongoClient.db("main");
-}
+export const mongoDatabase = mongoClient.db("main");

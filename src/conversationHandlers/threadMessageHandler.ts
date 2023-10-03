@@ -1,12 +1,11 @@
 import { Message } from "discord.js";
-import { getMongoDatabase } from "../db/mongoInstance";
+import { mongoDatabase } from "../db/mongoInstance";
 import { ActiveThread } from "../types/ActiveThread";
 import splitMessage from "../util/splitMessage";
 import { ANONYMOUS_COMMAND_PREFIX } from "../constants";
 
 export default async function handleThreadMessage(message: Message) {
-    const db = getMongoDatabase();
-    const activeThread = await db.collection<ActiveThread>("active_threads").findOne({ receivingThreadId: message.channel.id });
+    const activeThread = await mongoDatabase.collection<ActiveThread>("active_threads").findOne({ receivingThreadId: message.channel.id });
 
     if (!activeThread) {
         return;
@@ -32,7 +31,7 @@ export default async function handleThreadMessage(message: Message) {
     }
 
     if (isCurrentMessageAnonymous) {
-        await db.collection<ActiveThread>("active_threads").updateOne({ receivingThreadId: message.channel.id }, { $push: { anonymousMessages: message.id } });
+        await mongoDatabase.collection<ActiveThread>("active_threads").updateOne({ receivingThreadId: message.channel.id }, { $push: { anonymousMessages: message.id } });
     }
 
     const user = await message.client.users.fetch(activeThread.userId);

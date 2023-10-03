@@ -3,11 +3,12 @@ import handlePrivateMessage from './src/conversationHandlers/privateMessageHandl
 import handleThreadMessage from './src/conversationHandlers/threadMessageHandler';
 import buttonHandler from './src/buttonHandlers/buttonHandler';
 import { DISCORD_BOT_TOKEN } from './src/secrets';
-import { createMongoConnection, getMongoDatabase } from './src/db/mongoInstance';
+import { createMongoConnection, mongoDatabase } from './src/db/mongoInstance';
 import slashCommandRouter from './src/slashcommands/slashCommandRouter';
 import express = require('express');
 import http = require('http');
 import attachmentRetreival from './src/webserver/attachmentRetreival';
+import { ActiveThread } from './src/types/ActiveThread';
 
 const app = express();
 
@@ -34,6 +35,10 @@ client.on('interactionCreate', async interaction => {
     else if (interaction.isCommand()) {
         slashCommandRouter(interaction);
     }
+});
+
+client.on('threadDelete', async thread => {
+    await mongoDatabase.collection<ActiveThread>("active_threads").deleteOne({ receivingThreadId: thread.id });
 });
 
 client.login(DISCORD_BOT_TOKEN);

@@ -1,5 +1,5 @@
 import { AttachmentBuilder, ButtonInteraction, EmbedBuilder, MessageType, TextChannel, ThreadChannel } from "discord.js";
-import { getMongoDatabase } from "../db/mongoInstance";
+import { mongoDatabase } from "../db/mongoInstance";
 import { ActiveThread } from "../types/ActiveThread";
 import generateTranscript from "../transcript/newTranscriptGenerator";
 import ConversationDetails from "../types/ConversationDetails";
@@ -9,8 +9,7 @@ import { ThreadType } from "../types/ThreadType";
 
 export default async function closeThreadButtonHandler(interaction: ButtonInteraction) {
     const message = interaction.message;
-    const db = getMongoDatabase();
-    const activeThread = await db.collection<ActiveThread>("active_threads").findOne({ receivingThreadId: interaction.channelId });
+    const activeThread = await mongoDatabase.collection<ActiveThread>("active_threads").findOne({ receivingThreadId: interaction.channelId });
     const thread = await interaction.client.channels.fetch(interaction.channelId) as ThreadChannel;
 
     if (!activeThread) return;
@@ -89,5 +88,5 @@ export default async function closeThreadButtonHandler(interaction: ButtonIntera
     const logChannel = await interaction.client.channels.fetch(LOG_CHANNEL_ID) as TextChannel;
     await logChannel.send({ embeds: [embed], files: modTranscript });
 
-    await db.collection<ActiveThread>("active_threads").deleteOne({ receivingThreadId: thread.id });
+    await mongoDatabase.collection<ActiveThread>("active_threads").deleteOne({ receivingThreadId: thread.id });
 }

@@ -8,7 +8,7 @@ import { ElementEntry } from "../types/ElementEntry";
 import { minify } from "html-minifier";
 import bytesToSize from "../util/fileSizes";
 import { ATTACHMENT_RETREIVAL_DOMAIN, ANONYMOUS_COMMAND_PREFIX } from "../constants";
-import { getMongoDatabase } from "../db/mongoInstance";
+import { mongoDatabase } from "../db/mongoInstance";
 import { ActiveThread } from "../types/ActiveThread";
 import isModeratorCompletelyAnonymous from "../util/anonymousChecks";
 
@@ -16,7 +16,7 @@ const FILE_SVG = `<svg class="file-icon" xmlns="http://www.w3.org/2000/svg" heig
 
 export default async function generateTranscript(details: ConversationDetails, messages: Message[], moderators: Collection<string, GuildMember>, isReportForUser: boolean) {
 
-    const activeThread = await getMongoDatabase().collection<ActiveThread>("active_threads").findOne({ receivingThreadId: details.threadId });;
+    const activeThread = await mongoDatabase.collection<ActiveThread>("active_threads").findOne({ receivingThreadId: details.threadId });;
     const template = await readFile("./src/transcript/transcript-template.html", 'utf-8');
     const $ = cheerio.load(template);
 

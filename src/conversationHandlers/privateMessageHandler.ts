@@ -1,13 +1,12 @@
 import { ActionRowBuilder, ForumChannel, Message, ButtonStyle, ButtonBuilder, ComponentType, ButtonInteraction, EmbedBuilder, AllowedMentionsTypes } from "discord.js";
-import { getMongoDatabase } from "../db/mongoInstance";
+import { mongoDatabase } from "../db/mongoInstance";
 import { MODERATION_FORUM_CHANNEL_ID, NEW_THREAD_NOTIFICATION_ROLE_ID, MODMAIL_BAN_ROLE_ID, ANONYMOUS_COMMAND_PREFIX } from "../constants";
 import { ActiveThread } from "../types/ActiveThread";
 import { ThreadType, stringToThreadType, threadTypeToId } from "../types/ThreadType";
 import splitMessage from "../util/splitMessage";
 
 export default async function handlePrivateMessage(message: Message) {
-    const db = getMongoDatabase();
-    const activeThread = await db.collection<ActiveThread>("active_threads").findOne({ userId: message.author.id });
+    const activeThread = await mongoDatabase.collection<ActiveThread>("active_threads").findOne({ userId: message.author.id });
     const server = (await message.client.channels.fetch(MODERATION_FORUM_CHANNEL_ID) as ForumChannel).guild;
     const guildMember = await server.members.fetch(message.author.id);
 
@@ -43,7 +42,7 @@ export default async function handlePrivateMessage(message: Message) {
                 allowedMentions: { parse: [ AllowedMentionsTypes.User ] }
             });
 
-            await db.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
+            await mongoDatabase.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
         }
 
         if (messageContentSplit.length === 0) {
@@ -55,7 +54,7 @@ export default async function handlePrivateMessage(message: Message) {
                 allowedMentions: { parse: [ AllowedMentionsTypes.User ] }
             });
 
-            await db.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
+            await mongoDatabase.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
         }
 
         return;
@@ -122,7 +121,7 @@ export default async function handlePrivateMessage(message: Message) {
 
     newThread.setName(`${newThread.name} [${newThread.id}]`);
 
-    await db.collection<ActiveThread>("active_threads").insertOne({
+    await mongoDatabase.collection<ActiveThread>("active_threads").insertOne({
         userId: message.author.id,
         receivingThreadId: newThread.id,
         type: threadType,
@@ -153,7 +152,7 @@ export default async function handlePrivateMessage(message: Message) {
             allowedMentions: { parse: [ AllowedMentionsTypes.User ] }
         });
 
-        await db.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
+        await mongoDatabase.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
     }
 
     if (messageContentSplit.length === 0) {
@@ -165,7 +164,7 @@ export default async function handlePrivateMessage(message: Message) {
             allowedMentions: { parse: [ AllowedMentionsTypes.User ] }
         });
 
-        await db.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
+        await mongoDatabase.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
     }
 
     mailTypeMessage.edit({
