@@ -4,6 +4,7 @@ import { MODERATION_FORUM_CHANNEL_ID, NEW_THREAD_NOTIFICATION_ROLE_ID, MODMAIL_B
 import { ActiveThread } from "../types/ActiveThread";
 import { ThreadType, stringToThreadType, threadTypeToId } from "../types/ThreadType";
 import splitMessage from "../util/splitMessage";
+import GuildConfig from "../types/GuildConfig";
 
 export default async function handlePrivateMessage(message: Message) {
     const activeThread = await mongoDatabase.collection<ActiveThread>("active_threads").findOne({ userId: message.author.id });
@@ -57,6 +58,12 @@ export default async function handlePrivateMessage(message: Message) {
             await mongoDatabase.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
         }
 
+        return;
+    }
+
+    const guildConfig = await mongoDatabase.collection<GuildConfig>("guildconfigs").findOne({ guildId: server.id });
+    if (guildConfig && guildConfig.modmailDisabled) {
+        await message.channel.send("Modmail submissions aren't currently being accepted right now. Please try again later!");
         return;
     }
 
