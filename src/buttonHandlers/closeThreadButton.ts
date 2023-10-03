@@ -38,7 +38,7 @@ export default async function closeThreadButtonHandler(interaction: ButtonIntera
         const messages = await thread.messages.fetch({ limit: 100, before: lastMessageId });
         lastNumberOfRetrievedMessages = messages.size;
         lastMessageId = messages.last().id;
-        threadMessages.push(...messages.values());
+        threadMessages.push(...messages.filter(message => message.type === MessageType.Default && (!message.author.bot || message.webhookId)).values());
     }
     while (lastNumberOfRetrievedMessages == 100);
 
