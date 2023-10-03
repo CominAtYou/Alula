@@ -1,6 +1,6 @@
 import { ThreadType } from "./ThreadType";
 
-export interface ActiveThread {
+export default interface ActiveThread {
     userId: string;
     receivingThreadId: string;
     type: ThreadType;

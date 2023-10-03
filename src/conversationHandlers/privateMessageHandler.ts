@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ForumChannel, Message, ButtonStyle, ButtonBuilder, ComponentType, ButtonInteraction, EmbedBuilder, AllowedMentionsTypes } from "discord.js";
 import { mongoDatabase } from "../db/mongoInstance";
 import { MODERATION_FORUM_CHANNEL_ID, NEW_THREAD_NOTIFICATION_ROLE_ID, MODMAIL_BAN_ROLE_ID, ANONYMOUS_COMMAND_PREFIX } from "../constants";
-import { ActiveThread } from "../types/ActiveThread";
+import ActiveThread from "../types/ActiveThread";
 import { ThreadType, stringToThreadType, threadTypeToId } from "../types/ThreadType";
 import splitMessage from "../util/splitMessage";
 import GuildConfig from "../types/GuildConfig";
@@ -121,7 +121,7 @@ export default async function handlePrivateMessage(message: Message) {
     const forumChannel = await message.client.channels.fetch(threadTypeToId[threadType]) as ForumChannel;
     const forumChannelWebhooks = await forumChannel.fetchWebhooks();
     const webhook = forumChannelWebhooks.size > 0 ? forumChannelWebhooks.first() : await forumChannel.createWebhook({ name: "Modmail Webhook", reason: "No webhook was present for the forum channel." });
-    
+
     typeSelectionInProgressUsers.splice(typeSelectionInProgressUsers.indexOf(message.author.id), 1);
 
     const newThread = await forumChannel.threads.create({

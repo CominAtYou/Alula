@@ -8,7 +8,7 @@ import slashCommandRouter from './src/slashcommands/slashCommandRouter';
 import express = require('express');
 import http = require('http');
 import attachmentRetreival from './src/webserver/attachmentRetreival';
-import { ActiveThread } from './src/types/ActiveThread';
+import ActiveThread from './src/types/ActiveThread';
 
 const app = express();
 

@@ -1,6 +1,6 @@
 import { Message } from "discord.js";
 import { mongoDatabase } from "../db/mongoInstance";
-import { ActiveThread } from "../types/ActiveThread";
+import ActiveThread from "../types/ActiveThread";
 import splitMessage from "../util/splitMessage";
 import { ANONYMOUS_COMMAND_PREFIX } from "../constants";
 

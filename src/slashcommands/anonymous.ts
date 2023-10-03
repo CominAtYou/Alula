@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, CommandInteraction, MessageFlags } from "discord.js";
 import { mongoDatabase } from "../db/mongoInstance";
-import { ActiveThread } from "../types/ActiveThread";
+import ActiveThread from "../types/ActiveThread";
 import { ANONYMOUS_COMMAND_PREFIX } from "../constants";
 
 export default async function anonymousSlashCommand(interaction: ChatInputCommandInteraction) {

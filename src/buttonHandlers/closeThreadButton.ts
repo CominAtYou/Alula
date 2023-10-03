@@ -1,6 +1,6 @@
 import { AttachmentBuilder, ButtonInteraction, EmbedBuilder, Message, MessageType, TextChannel, ThreadChannel } from "discord.js";
 import { mongoDatabase } from "../db/mongoInstance";
-import { ActiveThread } from "../types/ActiveThread";
+import ActiveThread from "../types/ActiveThread";
 import generateTranscript from "../transcript/newTranscriptGenerator";
 import ConversationDetails from "../types/ConversationDetails";
 import { MODERATION_MODMAIL_LOG_CHANNEL_ID, APPEALS_MODMAIL_LOG_CHANNEL_ID, DATA_MODMAIL_LOG_CHANNEL_ID } from "../constants";
