@@ -110,8 +110,8 @@ export default async function handlePrivateMessage(message: Message) {
         autoArchiveDuration: 1440,
         reason: "New modmail thread",
         message: {
-            content: `<@&${NEW_THREAD_NOTIFICATION_ROLE_ID}> <@${message.author.id}> (${message.author.id}) has started a new modmail thread.\nUse </anon:1158087318431867023> to hide or reveal the identity of moderators participating in this thread.\n\`${ANONYMOUS_COMMAND_PREFIX}identity\` can be used to selectively reveal your identity if the thread is set to anonymous, or to hide your identity otherwise.`,
-        components: [
+            content: `${threadType !== ThreadType.APPEAL ? "<@&" + NEW_THREAD_NOTIFICATION_ROLE_ID + "> " : ""}<@${message.author.id}> (${message.author.id}) has started a new modmail thread.\nUse </anon:1158087318431867023> to hide or reveal the identity of moderators participating in this thread.\n\`${ANONYMOUS_COMMAND_PREFIX}identity\` can be used to selectively reveal your identity if the thread is set to anonymous, or to hide your identity otherwise.`,
+            components: [
                 new ActionRowBuilder<ButtonBuilder>().addComponents(
                     new ButtonBuilder().setCustomId("close_thread").setLabel("Close Thread").setStyle(ButtonStyle.Danger).setEmoji("🔒")
                 )
