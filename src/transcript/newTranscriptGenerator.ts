@@ -80,7 +80,7 @@ export default async function generateTranscript(details: ConversationDetails, m
                 // expectedtype is the first part of the content type, e.g. image/png -> image
                 attachments.push({
                     name: attachment.name,
-                    url: `${ATTACHMENT_RETREIVAL_DOMAIN}/${message.channel.id}/${message.id}/${attachment.id}/${attachment.name}}?expectedtype=${attachment.contentType.split("/")[0]}`,
+                    url: `${ATTACHMENT_RETREIVAL_DOMAIN}/${message.channel.id}/${message.id}/${attachment.id}/${attachment.name}?expectedtype=${attachment.contentType.split("/")[0]}`,
                     size: attachment.size,
                     contentType: attachment.contentType
                 });
