@@ -121,6 +121,8 @@ export default async function handlePrivateMessage(message: Message) {
     const forumChannel = await message.client.channels.fetch(threadTypeToId[threadType]) as ForumChannel;
     const forumChannelWebhooks = await forumChannel.fetchWebhooks();
     const webhook = forumChannelWebhooks.size > 0 ? forumChannelWebhooks.first() : await forumChannel.createWebhook({ name: "Modmail Webhook", reason: "No webhook was present for the forum channel." });
+    
+    typeSelectionInProgressUsers.splice(typeSelectionInProgressUsers.indexOf(message.author.id), 1);
 
     const newThread = await forumChannel.threads.create({
         name: `@${message.author.username}`,
