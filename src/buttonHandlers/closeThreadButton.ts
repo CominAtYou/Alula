@@ -1,4 +1,4 @@
-import { AttachmentBuilder, ButtonInteraction, EmbedBuilder, MessageType, TextChannel, ThreadChannel } from "discord.js";
+import { AttachmentBuilder, ButtonInteraction, EmbedBuilder, Message, MessageType, TextChannel, ThreadChannel } from "discord.js";
 import { mongoDatabase } from "../db/mongoInstance";
 import { ActiveThread } from "../types/ActiveThread";
 import generateTranscript from "../transcript/newTranscriptGenerator";
@@ -30,7 +30,20 @@ export default async function closeThreadButtonHandler(interaction: ButtonIntera
         creator: user
     }
 
-    const threadMessages = Array.from((await thread.messages.fetch()).values()).reverse().filter(message => message.type === MessageType.Default && (!message.author.bot || message.webhookId));
+    const threadMessages: Message[] = [];
+    let lastMessageId: string = undefined;
+    let lastNumberOfRetrievedMessages = 0;
+
+    do {
+        const messages = await thread.messages.fetch({ limit: 100, before: lastMessageId });
+        lastNumberOfRetrievedMessages = messages.size;
+        lastMessageId = messages.last().id;
+        threadMessages.push(...messages.values());
+    }
+    while (lastNumberOfRetrievedMessages == 100);
+
+    threadMessages.reverse();
+
     const attendingModerators = thread.guildMembers.filter(member => !member.user.bot);
 
     const moderatorTranscript = await generateTranscript(threadDetails, threadMessages, attendingModerators, false);
