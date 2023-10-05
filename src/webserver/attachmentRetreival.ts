@@ -45,8 +45,8 @@ export default async function attachmentRetreival(req: Request, res: Response, c
 
     const expires = parseInt("0x" + new URLSearchParams(attachment.url).get("ex"));
 
-    await mongoDatabase.collection("attachment_links").insertOne({
-        expireAt: new Date(expires),
+    await mongoDatabase.collection("attachment_link_cache").insertOne({
+        expireAt: new Date(expires * 1000),
         channelId: path[0],
         messageId: path[1],
         attachmentSnowflake: path[2],
