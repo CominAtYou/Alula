@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ForumChannel, Message, ButtonStyle, ButtonBuilder, ComponentType, ButtonInteraction, EmbedBuilder, AllowedMentionsTypes } from "discord.js";
+import { ActionRowBuilder, ForumChannel, Message, ButtonStyle, ButtonBuilder, ComponentType, EmbedBuilder, AllowedMentionsTypes, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, StringSelectMenuInteraction } from "discord.js";
 import { mongoDatabase } from "../db/mongoInstance";
 import { MODERATION_FORUM_CHANNEL_ID, NEW_THREAD_NOTIFICATION_ROLE_ID, MODMAIL_BAN_ROLE_ID, ANONYMOUS_COMMAND_PREFIX } from "../constants";
 import ActiveThread from "../types/ActiveThread";
@@ -78,37 +78,51 @@ export default async function handlePrivateMessage(message: Message) {
     const mailTypeMessage = await message.channel.send({
         embeds: [
             new EmbedBuilder()
-            .setTitle("What type of request are you making?")
-            .setDescription("Before you get started, please indicate the type of request you are making. Request types are listed below.")
-            .setColor("#007acc")
-            .addFields([
-                {
-                    name: "Moderation",
-                    value: "Used for moderation requests, such as reporting a player."
-                },
-                {
-                    name: "Appeals",
-                    value: "Anything involving contesting or appealing moderation actions, such as a ban from the game."
-                },
-                {
-                    name: "Data",
-                    value: "Anything regarding your stats."
-                }
-            ])
+                .setTitle("What type of request are you making?")
+                .setDescription("Before you get started, please indicate the type of request you are making. Request types are listed below.")
+                .setColor("#007acc")
+                .addFields([
+                    {
+                        name: "Moderation",
+                        value: "Used for moderation requests, such as reporting a player."
+                    },
+                    {
+                        name: "Appeals",
+                        value: "Anything involving contesting or appealing moderation actions, such as a ban from the game."
+                    },
+                    {
+                        name: "Data",
+                        value: "Anything regarding your stats."
+                    }
+                ])
         ],
         components: [
-            new ActionRowBuilder<ButtonBuilder>().addComponents(
-                new ButtonBuilder().setCustomId("moderation").setLabel("Moderation").setStyle(ButtonStyle.Secondary),
-                new ButtonBuilder().setCustomId("appeal").setLabel("Appeals").setStyle(ButtonStyle.Secondary),
-                new ButtonBuilder().setCustomId("data").setLabel("Data").setStyle(ButtonStyle.Secondary)
+            new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId('type_select_menu')
+                    .setPlaceholder("Select a Request Type")
+                    .addOptions([
+                        new StringSelectMenuOptionBuilder()
+                            .setLabel("Moderation")
+                            .setValue("moderation")
+                            .setDescription("Used for moderation requests, such as reporting a player."),
+                        new StringSelectMenuOptionBuilder()
+                            .setLabel("Appeals")
+                            .setValue("appeals")
+                            .setDescription("Anything involving contesting or appealing moderation actions."),
+                        new StringSelectMenuOptionBuilder()
+                            .setLabel("Data")
+                            .setValue("data")
+                            .setDescription("Anything regarding your stats.")
+                    ])
             )
         ]
     });
 
-    let response: ButtonInteraction = null;
+    let response: StringSelectMenuInteraction = null;
     try {
         typeSelectionInProgressUsers.push(message.author.id);
-        response = await mailTypeMessage.awaitMessageComponent<ComponentType.Button>({ time: 60000 });
+        response = await mailTypeMessage.awaitMessageComponent<ComponentType.StringSelect>({ time: 60000 });
     }
     catch {
         await mailTypeMessage.edit({ content: "Your session has expired. Re-send your initial message to try again.", components: [], embeds: [] });
@@ -117,7 +131,7 @@ export default async function handlePrivateMessage(message: Message) {
     }
 
     await response.deferUpdate();
-    const threadType: ThreadType = stringToThreadType[response.customId];
+    const threadType: ThreadType = stringToThreadType[response.values[0]];
     const forumChannel = await message.client.channels.fetch(threadTypeToId[threadType]) as ForumChannel;
     const forumChannelWebhooks = await forumChannel.fetchWebhooks();
     const webhook = forumChannelWebhooks.size > 0 ? forumChannelWebhooks.first() : await forumChannel.createWebhook({ name: "Modmail Webhook", reason: "No webhook was present for the forum channel." });
