@@ -200,7 +200,7 @@ export default async function generateTranscript(details: ConversationDetails, m
 
             if (j === 0) {
                 const firstMessage = $(`<div class="chathead-first-message"></div>`);
-                firstMessage.append(`<img class="chathead-avatar" src="${author.avatarURL}" />`);
+                firstMessage.append(`<img class="chathead-avatar" src="${author.avatarURL}" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'" />`); // fall back to default Discord avatar
                 if (element.type === "text") {
                     const messageBubble = $(`<div class="message-bubble ${elementList.length === 1 ? "message-bubble-single" : "message-bubble-initial"}"></div>`);
                     messageBubble.append(`<p>${element.content}</p>`);
