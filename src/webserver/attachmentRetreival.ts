@@ -43,7 +43,7 @@ export default async function attachmentRetreival(req: Request, res: Response, c
         return;
     }
 
-    const expires = parseInt("0x" + new URLSearchParams(attachment.url).get("ex"));
+    const expires = parseInt(new URL(attachment.url).searchParams.get("ex"), 16);
 
     await mongoDatabase.collection("attachment_link_cache").insertOne({
         expireAt: new Date(expires * 1000),
