@@ -1,6 +1,7 @@
 import { Client, GuildTextBasedChannel } from "discord.js";
 import { Request, Response } from "express";
 import { mongoDatabase } from "../db/mongoInstance";
+import CachedAttachment from "../types/CachedAttachment";
 
 export default async function attachmentRetreival(req: Request, res: Response, client: Client) {
     const path = req.path.split("/").slice(1);
@@ -10,10 +11,10 @@ export default async function attachmentRetreival(req: Request, res: Response, c
         return;
     }
 
-    const cachedLink = await mongoDatabase.collection("attachment_link_cache").findOne({ channelId: path[0], messageId: path[1], attachmentSnowflake: path[2], filename: decodeURIComponent(path[3]) });
+    const cachedLink = await mongoDatabase.collection<CachedAttachment>("attachment_link_cache").findOne({ channelId: path[0], messageId: path[1], attachmentId: path[2], filename: decodeURIComponent(path[3]) });
 
     if (cachedLink) {
-        res.redirect(cachedLink.attachmentLink);
+        res.redirect(cachedLink.attachmentUrl);
         return;
     }
 
@@ -45,13 +46,13 @@ export default async function attachmentRetreival(req: Request, res: Response, c
 
     const expires = parseInt(new URL(attachment.url).searchParams.get("ex"), 16);
 
-    await mongoDatabase.collection("attachment_link_cache").insertOne({
+    await mongoDatabase.collection<CachedAttachment>("attachment_link_cache").insertOne({
         expireAt: new Date(expires * 1000),
         channelId: path[0],
         messageId: path[1],
-        attachmentSnowflake: path[2],
+        attachmentId: path[2],
         filename: attachment.name,
-        attachmentLink: attachment.url
+        attachmentUrl: attachment.url
     });
 
     res.redirect(attachment.url);
