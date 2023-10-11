@@ -6,6 +6,7 @@ import ConversationDetails from "../types/ConversationDetails";
 import { MODERATION_MODMAIL_LOG_CHANNEL_ID, APPEALS_MODMAIL_LOG_CHANNEL_ID, DATA_MODMAIL_LOG_CHANNEL_ID } from "../constants";
 import isModeratorCompletelyAnonymous from "../util/anonymousChecks";
 import { ThreadType } from "../types/ThreadType";
+import Analytics from "../types/Analytics";
 
 export default async function closeThreadButtonHandler(interaction: ButtonInteraction) {
     const message = interaction.message;
@@ -103,4 +104,5 @@ export default async function closeThreadButtonHandler(interaction: ButtonIntera
     await logChannel.send({ embeds: [embed], files: modTranscript });
 
     await mongoDatabase.collection<ActiveThread>("active_threads").deleteOne({ receivingThreadId: thread.id });
+    await mongoDatabase.collection<Analytics>("analytics").updateOne({ guild: thread.guild.id }, { $inc: { closedThreads: 1 } }, { upsert: true });
 }

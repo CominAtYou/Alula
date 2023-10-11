@@ -5,6 +5,7 @@ import ActiveThread from "../types/ActiveThread";
 import { ThreadType, stringToThreadType, threadTypeToId } from "../types/ThreadType";
 import splitMessage from "../util/splitMessage";
 import GuildConfig from "../types/GuildConfig";
+import Analytics from "../types/Analytics";
 
 /**
  * A list of users who are currently in the process of selecting a thread type.
@@ -14,8 +15,8 @@ const typeSelectionInProgressUsers: string[] = [];
 
 export default async function handlePrivateMessage(message: Message) {
     const activeThread = await mongoDatabase.collection<ActiveThread>("active_threads").findOne({ userId: message.author.id });
-    const server = (await message.client.channels.fetch(MODERATION_FORUM_CHANNEL_ID) as ForumChannel).guild;
-    const guildMember = await server.members.fetch(message.author.id);
+    const guild = (await message.client.channels.fetch(MODERATION_FORUM_CHANNEL_ID) as ForumChannel).guild;
+    const guildMember = await guild.members.fetch(message.author.id);
 
     if (guildMember.roles.cache.has(MODMAIL_BAN_ROLE_ID)) {
         message.channel.send("Your modmail priveliges have been revoked by a staff member. If you believe that this is a mistake, please contact a staff member via other means.");
@@ -69,7 +70,7 @@ export default async function handlePrivateMessage(message: Message) {
         return;
     }
 
-    const guildConfig = await mongoDatabase.collection<GuildConfig>("guildconfigs").findOne({ guildId: server.id });
+    const guildConfig = await mongoDatabase.collection<GuildConfig>("guildconfigs").findOne({ guildId: guild.id });
     if (guildConfig && guildConfig.modmailDisabled) {
         await message.channel.send("Modmail submissions aren't currently being accepted right now. Please try again later!");
         return;
@@ -162,6 +163,8 @@ export default async function handlePrivateMessage(message: Message) {
         webhookMessageMap: [],
         anonymousMessages: []
     });
+
+    await mongoDatabase.collection<Analytics>("analytics").updateOne({ guild: guild.id }, { $inc: { openedThreads: 1 } }, { upsert: true });
 
     const files = message.attachments.filter(attachment => attachment.size <= 25000000).map(attachment => attachment.url);
     const leftoverFiles = message.attachments.filter(attachment => attachment.size > 25000000);
