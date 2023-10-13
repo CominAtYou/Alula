@@ -17,7 +17,7 @@ export async function createMongoConnection() {
             const collection = await mongoClient.db("main").createCollection("attachment_link_cache");
 
             await collection.createIndex({ expireAt: 1 }, { expireAfterSeconds: 0 });
-            await collection.createIndex({ channelId: 1, messageId: 1, attachmentSnowflake: 1, filename: 1, attachmentLink: 1 });
+            await collection.createIndex({ channelId: 1, messageId: 1, attachmentId: 1, filename: 1, attachmentUrl: 1 });
         }
 
         console.log("Connected to MongoDB!");
