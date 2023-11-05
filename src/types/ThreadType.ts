@@ -8,7 +8,7 @@ export enum ThreadType {
 
 export const stringToThreadType = {
     "moderation": ThreadType.MODERATION,
-    "appeal": ThreadType.APPEAL,
+    "appeals": ThreadType.APPEAL,
     "data": ThreadType.DATA
 }
 
