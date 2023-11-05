@@ -9,6 +9,7 @@ import express = require('express');
 import http = require('http');
 import attachmentRetreival from './src/webserver/attachmentRetreival';
 import ActiveThread from './src/types/ActiveThread';
+import { APPEALS_FORUM_CHANNEL_ID, DATA_FORUM_CHANNEL_ID, MODERATION_FORUM_CHANNEL_ID } from './src/constants';
 
 const app = express();
 
@@ -24,6 +25,8 @@ client.on('messageCreate', async message => {
         await handlePrivateMessage(message);
     }
     else if (message.channel.type == ChannelType.PublicThread) {
+        if (![MODERATION_FORUM_CHANNEL_ID, APPEALS_FORUM_CHANNEL_ID, DATA_FORUM_CHANNEL_ID].includes(message.channel.parent.id)) return;
+
         await handleThreadMessage(message);
     }
 });
