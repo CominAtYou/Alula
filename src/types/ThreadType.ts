@@ -1,15 +1,9 @@
 import { APPEALS_FORUM_CHANNEL_ID, DATA_FORUM_CHANNEL_ID, MODERATION_FORUM_CHANNEL_ID } from "../constants";
 
 export enum ThreadType {
-    MODERATION,
-    APPEAL,
-    DATA
-}
-
-export const stringToThreadType = {
-    "moderation": ThreadType.MODERATION,
-    "appeals": ThreadType.APPEAL,
-    "data": ThreadType.DATA
+    MODERATION = "moderation",
+    APPEAL = "appeals",
+    DATA = "data"
 }
 
 export const threadTypeToId = {
