@@ -6,7 +6,7 @@ export enum ThreadType {
     DATA = "data"
 }
 
-export const threadTypeToId = {
+export const threadIds = {
     [ThreadType.MODERATION]: MODERATION_FORUM_CHANNEL_ID,
     [ThreadType.APPEAL]: APPEALS_FORUM_CHANNEL_ID,
     [ThreadType.DATA]: DATA_FORUM_CHANNEL_ID

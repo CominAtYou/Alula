@@ -2,7 +2,7 @@ import { ActionRowBuilder, ForumChannel, Message, ButtonStyle, ButtonBuilder, Co
 import { mongoDatabase } from "../db/mongoInstance";
 import { MODERATION_FORUM_CHANNEL_ID, NEW_THREAD_NOTIFICATION_ROLE_ID, MODMAIL_BAN_ROLE_ID, ANONYMOUS_COMMAND_PREFIX } from "../constants";
 import ActiveThread from "../types/ActiveThread";
-import { ThreadType, stringToThreadType, threadTypeToId } from "../types/ThreadType";
+import { ThreadType, threadIds } from "../types/ThreadType";
 import splitMessage from "../util/splitMessage";
 import GuildConfig from "../types/GuildConfig";
 import Analytics from "../types/Analytics";
@@ -26,7 +26,7 @@ export default async function handlePrivateMessage(message: Message) {
     if (typeSelectionInProgressUsers.includes(message.author.id)) return;
 
     if (activeThread) {
-        const forumChannel = await message.client.channels.fetch(threadTypeToId[activeThread.type]) as ForumChannel;
+        const forumChannel = await message.client.channels.fetch(threadIds[activeThread.type]) as ForumChannel;
         const forumChannelWebhooks = await forumChannel.fetchWebhooks();
         const webhook = forumChannelWebhooks.size > 0 ? forumChannelWebhooks.first() : await forumChannel.createWebhook({ name: "Modmail Webhook", reason: "No webhook was present for the forum channel." });
 
@@ -132,8 +132,8 @@ export default async function handlePrivateMessage(message: Message) {
     }
 
     await response.deferUpdate();
-    const threadType: ThreadType = stringToThreadType[response.values[0]];
-    const forumChannel = await message.client.channels.fetch(threadTypeToId[threadType]) as ForumChannel;
+    const threadType = response.values[0] as ThreadType;
+    const forumChannel = await message.client.channels.fetch(threadIds[threadType]) as ForumChannel;
     const forumChannelWebhooks = await forumChannel.fetchWebhooks();
     const webhook = forumChannelWebhooks.size > 0 ? forumChannelWebhooks.first() : await forumChannel.createWebhook({ name: "Modmail Webhook", reason: "No webhook was present for the forum channel." });
 
