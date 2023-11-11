@@ -482,8 +482,12 @@
                 color: white;
             }
 
-            .chathead-left .message-bubble {
+            .chathead-left .message-bubble, #details-button, .conversation-details-content-container {
                 background-color: #3f3f46;
+            }
+
+            #details-button svg {
+                filter: invert(1);
             }
 
             #navbar {
@@ -493,10 +497,6 @@
             #conversation-container {
                 border-left: rgb(50 50 50) 1px solid;
                 border-right: rgb(50 50 50) 1px solid;
-            }
-
-            .conversation-details-content-container {
-                background-color: #3f3f46;
             }
 
             #conversation-details {
