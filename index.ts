@@ -51,8 +51,8 @@ app.get("/*", async (req, res) => {
 });
 
 client.once('ready', async client => {
-    console.log(`Logged in as ${client.user.tag}!`);
     await createMongoConnection();
+    console.log(`Logged in as ${client.user.tag}!`);
 
     client.user.setActivity({ name: "Eating rocks since 2014", type: ActivityType.Custom });
     const server = http.createServer(app);
