@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ForumChannel, Message, ButtonStyle, ButtonBuilder, ComponentType, EmbedBuilder, AllowedMentionsTypes, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, StringSelectMenuInteraction } from "discord.js";
+import { ActionRowBuilder, ForumChannel, Message, ButtonStyle, ButtonBuilder, ComponentType, EmbedBuilder, AllowedMentionsTypes, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, StringSelectMenuInteraction, GuildMember, Guild, ThreadChannel } from "discord.js";
 import { mongoDatabase } from "../db/mongoInstance";
 import { MODERATION_FORUM_CHANNEL_ID, NEW_THREAD_NOTIFICATION_ROLE_ID, MODMAIL_BAN_ROLE_ID, ANONYMOUS_COMMAND_PREFIX } from "../constants";
 import ActiveThread from "../types/ActiveThread";
@@ -13,63 +13,7 @@ import Analytics from "../types/Analytics";
  */
 const typeSelectionInProgressUsers: string[] = [];
 
-export default async function handlePrivateMessage(message: Message) {
-    const activeThread = await mongoDatabase.collection<ActiveThread>("active_threads").findOne({ userId: message.author.id });
-    const guild = (await message.client.channels.fetch(MODERATION_FORUM_CHANNEL_ID) as ForumChannel).guild;
-    const guildMember = await guild.members.fetch(message.author.id);
-
-    if (guildMember.roles.cache.has(MODMAIL_BAN_ROLE_ID)) {
-        message.channel.send("Your modmail priveliges have been revoked by a staff member. If you believe that this is a mistake, please contact a staff member via other means.");
-        return;
-    }
-
-    if (typeSelectionInProgressUsers.includes(message.author.id)) return;
-
-    if (activeThread) {
-        const forumChannel = await message.client.channels.fetch(threadIds[activeThread.type]) as ForumChannel;
-        const forumChannelWebhooks = await forumChannel.fetchWebhooks();
-        const webhook = forumChannelWebhooks.size > 0 ? forumChannelWebhooks.first() : await forumChannel.createWebhook({ name: "Modmail Webhook", reason: "No webhook was present for the forum channel." });
-
-        const files = message.attachments.filter(attachment => attachment.size <= 25000000).map(attachment => attachment.url);
-        const leftoverFiles = message.attachments.filter(attachment => attachment.size > 25000000);
-
-        let messageContent = message.content.replace(/<:(\w+):\d+>/g, ":$1:");;
-        if (leftoverFiles.size > 0) {
-            messageContent += `\n`;
-            leftoverFiles.forEach(attachment => {
-                messageContent += `\n${attachment.url}`;
-            });
-        }
-
-        const messageContentSplit = splitMessage(messageContent);
-        for (let i = 0; i < messageContentSplit.length; i++) {
-            const result = await webhook.send({
-                threadId: activeThread.receivingThreadId,
-                content: messageContentSplit[i],
-                username: guildMember.displayName,
-                avatarURL: message.author.displayAvatarURL({ forceStatic: true }),
-                files: i === messageContentSplit.length - 1 ? files : [],
-                allowedMentions: { parse: [ AllowedMentionsTypes.User ] }
-            });
-
-            await mongoDatabase.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
-        }
-
-        if (messageContentSplit.length === 0) {
-            const result = await webhook.send({
-                threadId: activeThread.receivingThreadId,
-                username: guildMember.displayName,
-                avatarURL: message.author.displayAvatarURL({ forceStatic: true }),
-                files: files,
-                allowedMentions: { parse: [ AllowedMentionsTypes.User ] }
-            });
-
-            await mongoDatabase.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
-        }
-
-        return;
-    }
-
+async function createNewThread(message: Message, guildMember: GuildMember, guild: Guild) {
     const guildConfig = await mongoDatabase.collection<GuildConfig>("guildconfigs").findOne({ guildId: guild.id });
     if (guildConfig && guildConfig.modmailDisabled) {
         await message.channel.send("Modmail submissions aren't currently being accepted right now. Please try again later!");
@@ -214,4 +158,71 @@ export default async function handlePrivateMessage(message: Message) {
         ],
         components: []
     });
+}
+
+export default async function handlePrivateMessage(message: Message) {
+    const activeThread = await mongoDatabase.collection<ActiveThread>("active_threads").findOne({ userId: message.author.id });
+    const guild = ((message.client.channels.cache.get(MODERATION_FORUM_CHANNEL_ID) ?? await message.client.channels.fetch(MODERATION_FORUM_CHANNEL_ID)) as ForumChannel).guild;
+    const guildMember = await guild.members.fetch(message.author.id);
+
+    if (guildMember.roles.cache.has(MODMAIL_BAN_ROLE_ID)) {
+        message.channel.send("Your modmail priveliges have been revoked by a staff member. If you believe that this is a mistake, please contact a staff member via other means.");
+        return;
+    }
+
+    if (typeSelectionInProgressUsers.includes(message.author.id)) return;
+
+    if (activeThread) {
+        const forumChannel = (message.client.channels.cache.get(threadIds[activeThread.type]) ?? await message.client.channels.fetch(threadIds[activeThread.type])) as ForumChannel;
+        const threadChannel = (forumChannel.threads.cache.get(activeThread.receivingThreadId) ?? await forumChannel.threads.fetch(activeThread.receivingThreadId)) as ThreadChannel;
+
+        if (threadChannel.archived) {
+            await mongoDatabase.collection<ActiveThread>("active_threads").deleteMany({ userId: message.author.id });
+            createNewThread(message, guildMember, guild);
+            return;
+        }
+
+        const forumChannelWebhooks = await forumChannel.fetchWebhooks();
+        const webhook = forumChannelWebhooks.size > 0 ? forumChannelWebhooks.first() : await forumChannel.createWebhook({ name: "Modmail Webhook", reason: "No webhook was present for the forum channel." });
+
+        const files = message.attachments.filter(attachment => attachment.size <= 25000000).map(attachment => attachment.url);
+        const leftoverFiles = message.attachments.filter(attachment => attachment.size > 25000000);
+
+        let messageContent = message.content.replace(/<:(\w+):\d+>/g, ":$1:");;
+        if (leftoverFiles.size > 0) {
+            messageContent += `\n`;
+            leftoverFiles.forEach(attachment => {
+                messageContent += `\n${attachment.url}`;
+            });
+        }
+
+        const messageContentSplit = splitMessage(messageContent);
+        for (let i = 0; i < messageContentSplit.length; i++) {
+            const result = await webhook.send({
+                threadId: activeThread.receivingThreadId,
+                content: messageContentSplit[i],
+                username: guildMember.displayName,
+                avatarURL: message.author.displayAvatarURL({ forceStatic: true }),
+                files: i === messageContentSplit.length - 1 ? files : [],
+                allowedMentions: { parse: [ AllowedMentionsTypes.User ] }
+            });
+
+            await mongoDatabase.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
+        }
+
+        if (messageContentSplit.length === 0) {
+            const result = await webhook.send({
+                threadId: activeThread.receivingThreadId,
+                username: guildMember.displayName,
+                avatarURL: message.author.displayAvatarURL({ forceStatic: true }),
+                files: files,
+                allowedMentions: { parse: [ AllowedMentionsTypes.User ] }
+            });
+
+            await mongoDatabase.collection<ActiveThread>("active_threads").updateOne({ userId: message.author.id }, { $push: { webhookMessageMap: { webhookMessageId: result.id, originalMessageId: message.id } } });
+        }
+    }
+    else {
+        createNewThread(message, guildMember, guild);
+    }
 }
