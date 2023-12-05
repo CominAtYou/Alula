@@ -188,7 +188,7 @@ export default async function handlePrivateMessage(message: Message) {
         const files = message.attachments.filter(attachment => attachment.size <= 25000000).map(attachment => attachment.url);
         const leftoverFiles = message.attachments.filter(attachment => attachment.size > 25000000);
 
-        let messageContent = message.content.replace(/<:(\w+):\d+>/g, ":$1:");;
+        let messageContent = message.content.replace(/<:(\w+):\d+>/g, ":$1:");
         if (leftoverFiles.size > 0) {
             messageContent += `\n`;
             leftoverFiles.forEach(attachment => {
