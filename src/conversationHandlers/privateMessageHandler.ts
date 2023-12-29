@@ -153,7 +153,7 @@ async function createNewThread(message: Message, guildMember: GuildMember, guild
             new EmbedBuilder()
                 .setTitle("Message Sent!")
                 .setColor("#007acc")
-                .setDescription("A line has been opened to the staff team. A staff member will respond momentarily.")
+                .setDescription("A line has been opened to the staff team, and a staff member will respond momentarily. Anything you send in here will automatically be forwarded to them.")
                 .addFields({ name: "Conversation ID", value: newThread.id, inline: true })
         ],
         components: []
