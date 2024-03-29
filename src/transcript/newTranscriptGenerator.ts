@@ -280,12 +280,15 @@ export default async function generateTranscript(details: ConversationDetails, m
         visibleModerators.push(...moderators.values());
     }
 
-    if (isReportForUser) {
-        if (!isModeratorCompletelyAnonymous(details.closerId, messages, activeThread.anonymousMessages)) {
-            $("#conversation-closer").text(`@${details.closerUsername}`);
+    if (details.closerId === messages[0].client.user.id) {
+        $("#conversation-closer-container").remove();
+    }
+    else if (isReportForUser) {
+        if (isModeratorCompletelyAnonymous(details.closerId, messages, activeThread.anonymousMessages)) {
+            $("#conversation-closer-container").remove();
         }
         else {
-            $("#conversation-closer-container").remove();
+            $("#conversation-closer").text(`@${details.closerUsername}`);
         }
     }
     else {

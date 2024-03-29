@@ -1,4 +1,4 @@
-import { AttachmentBuilder, Client, EmbedBuilder, Message, MessageType, TextChannel, ThreadChannel, User } from "discord.js";
+import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, Client, EmbedBuilder, Message, MessageType, TextChannel, ThreadChannel, User } from "discord.js";
 import { MODERATION_MODMAIL_LOG_CHANNEL_ID, APPEALS_MODMAIL_LOG_CHANNEL_ID, DATA_MODMAIL_LOG_CHANNEL_ID } from "../constants";
 import { mongoDatabase } from "../db/mongoInstance";
 import { ThreadType } from "../types/ThreadType";
@@ -10,6 +10,7 @@ import generateTranscript from "../transcript/newTranscriptGenerator";
 export default async function closeThread(client: Client, channelId: string, invoker: User) {
     const activeThread = await mongoDatabase.collection<ActiveThread>("active_threads").findOne({ receivingThreadId: channelId });
     const thread = await client.channels.fetch(channelId) as ThreadChannel;
+    const closedDueToInactivity = invoker.id === client.user.id;
 
     if (!activeThread) return;
 
@@ -51,7 +52,7 @@ export default async function closeThread(client: Client, channelId: string, inv
     const modTranscript = [new AttachmentBuilder(Buffer.from(moderatorTranscript)).setName(`transcript-${user.username}-${thread.id}.html`)];
 
     await thread.send({
-        content: `@${invoker.username} closed this thread.`,
+        content: closedDueToInactivity ? "This thread was closed due to inactivity." : `@${invoker.username} closed this thread.`,
         files: modTranscript
     });
 
@@ -60,7 +61,7 @@ export default async function closeThread(client: Client, channelId: string, inv
     const isCloserAnonymous = isModeratorCompletelyAnonymous(invoker.id, threadMessages, activeThread.anonymousMessages);
 
     await userDMChannel.send({
-        content: `Your thread has been closed by ${isCloserAnonymous ? "a moderator" : `@${invoker.username}`}. Send another message to open a new thread.`,
+        content: closedDueToInactivity ? "Your thread was closed due to inactivity. Send another message to open a new thread." : `Your thread was closed by ${isCloserAnonymous ? "a moderator" : `@${invoker.username}`}. Send another message to open a new thread.`,
         files: [new AttachmentBuilder(Buffer.from(activeThread.anonymousMessages.length > 0 ? userTranscript : moderatorTranscript)).setName(`transcript-${user.username}-${thread.id}-${activeThread.anonymousMessages.length > 0 ? "ab" : ""}.html`)]
     });
 
@@ -94,10 +95,17 @@ export default async function closeThread(client: Client, channelId: string, inv
             }
         ]);
 
+        const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder()
+                .setStyle(ButtonStyle.Link)
+                .setURL(thread.url)
+                .setLabel("View Thread")
+        );
+
 
     const LOG_CHANNEL_ID = activeThread.type == ThreadType.MODERATION ? MODERATION_MODMAIL_LOG_CHANNEL_ID : (activeThread.type == ThreadType.APPEAL ? APPEALS_MODMAIL_LOG_CHANNEL_ID : DATA_MODMAIL_LOG_CHANNEL_ID);
     const logChannel = await client.channels.fetch(LOG_CHANNEL_ID) as TextChannel;
-    await logChannel.send({ embeds: [embed], files: modTranscript });
+    await logChannel.send({ embeds: [embed], files: modTranscript, components: [buttonRow] });
 
     await mongoDatabase.collection<ActiveThread>("active_threads").deleteOne({ receivingThreadId: thread.id });
 }
