@@ -29,7 +29,7 @@ export default async function closeThread(client: Client, channelId: string, inv
     }
 
     const threadMessages: Message[] = [];
-    let lastMessageId: string = undefined;
+    let lastMessageId: string;
     let lastNumberOfRetrievedMessages = 0;
 
     do {
@@ -38,7 +38,7 @@ export default async function closeThread(client: Client, channelId: string, inv
         lastMessageId = messages.last().id;
         threadMessages.push(...messages.filter(message => message.type === MessageType.Default && (!message.author.bot || message.webhookId)).values());
     }
-    while (lastNumberOfRetrievedMessages == 100);
+    while (lastNumberOfRetrievedMessages === 100);
 
     threadMessages.reverse();
 
