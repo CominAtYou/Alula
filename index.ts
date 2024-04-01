@@ -8,7 +8,6 @@ import slashCommandRouter from './src/slashcommands/slashCommandRouter';
 import { readFile } from 'fs/promises';
 import https = require('https');
 import express = require('express');
-import http = require('http');
 import attachmentRetreival from './src/webserver/attachmentRetreival';
 import ActiveThread from './src/types/ActiveThread';
 import { APPEALS_FORUM_CHANNEL_ID, DATA_FORUM_CHANNEL_ID, MODERATION_FORUM_CHANNEL_ID } from './src/constants';
