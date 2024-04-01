@@ -43,8 +43,8 @@ export default async function closeThread(client: Client, channelId: string, inv
     threadMessages.reverse();
 
     const attendingModerators = thread.guildMembers.filter(member => !member.user.bot);
-
     const moderatorTranscript = await generateTranscript(threadDetails, threadMessages, attendingModerators, false);
+
     if (activeThread.anonymousMessages.length > 0) {
         var userTranscript = await generateTranscript(threadDetails, threadMessages, attendingModerators, true);
     }

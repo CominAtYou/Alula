@@ -5,11 +5,14 @@ import buttonHandler from './src/buttonHandlers/buttonHandler';
 import { DISCORD_BOT_TOKEN } from './src/secrets';
 import { createMongoConnection, mongoDatabase } from './src/db/mongoInstance';
 import slashCommandRouter from './src/slashcommands/slashCommandRouter';
+import { readFile } from 'fs/promises';
+import https = require('https');
 import express = require('express');
 import http = require('http');
 import attachmentRetreival from './src/webserver/attachmentRetreival';
 import ActiveThread from './src/types/ActiveThread';
 import { APPEALS_FORUM_CHANNEL_ID, DATA_FORUM_CHANNEL_ID, MODERATION_FORUM_CHANNEL_ID } from './src/constants';
+import scheduleThreadExpiryTask from './src/threads/threadExpiryTask';
 
 const app = express();
 
@@ -54,6 +57,10 @@ client.once('ready', async client => {
     await createMongoConnection();
     console.log(`Logged in as ${client.user.tag}!`);
 
+    const credentials = { key: await readFile('ssl/key.pem'), cert: await readFile('ssl/cert.pem') };
+
     client.user.setActivity({ name: "Eating rocks since 2014", type: ActivityType.Custom });
-    http.createServer(app).listen(3000, () => console.log("HTTP server ready!"));
+    https.createServer(credentials, app).listen(3000, () => console.log("HTTPS server ready!"));
+
+    scheduleThreadExpiryTask(client);
 });
