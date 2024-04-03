@@ -42,6 +42,14 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
+client.on('messageCreate', async message => {
+    if (message.channel.id !== "222106327210655745") return;
+
+    if (Math.random() < 0.0005) {
+        message.react("❌");
+    }
+});
+
 client.on('threadDelete', async thread => {
     await mongoDatabase.collection<ActiveThread>("active_threads").deleteOne({ receivingThreadId: thread.id });
 });
