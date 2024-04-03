@@ -12,13 +12,12 @@ import attachmentRetreival from './src/webserver/attachmentRetreival';
 import ActiveThread from './src/types/ActiveThread';
 import { APPEALS_FORUM_CHANNEL_ID, DATA_FORUM_CHANNEL_ID, MODERATION_FORUM_CHANNEL_ID } from './src/constants';
 import scheduleThreadExpiryTask from './src/threads/threadExpiryTask';
-import startAprilFools from './src/util/aprilFools';
 
 const app = express();
 
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessageReactions],
-    partials: [Partials.Channel, Partials.Message, Partials.Reaction]
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildMembers],
+    partials: [Partials.Channel, Partials.Message]
 });
 
 client.on('messageCreate', async message => {
@@ -54,14 +53,13 @@ app.get("/*", async (req, res) => {
 });
 
 client.once('ready', async client => {
-    // await createMongoConnection();
+    await createMongoConnection();
     console.log(`Logged in as ${client.user.tag}!`);
 
-    // const credentials = { key: await readFile('ssl/key.pem'), cert: await readFile('ssl/cert.pem') };
+    const credentials = { key: await readFile('ssl/key.pem'), cert: await readFile('ssl/cert.pem') };
 
     client.user.setActivity({ name: "Eating rocks since 2014", type: ActivityType.Custom });
-    // https.createServer(credentials, app).listen(3000, () => console.log("HTTPS server ready!"));
+    https.createServer(credentials, app).listen(3000, () => console.log("HTTPS server ready!"));
 
-    startAprilFools(client);
     scheduleThreadExpiryTask(client);
 });
