@@ -5,7 +5,7 @@ import { Message } from "discord.js";
  * @param moderatorId The ID of the moderator to check.
  * @param messages A list of messages sent in the current thread.
  * @param hiddenMessageIds A list of message IDs that were sent anonymously.
- * @returns boolean {@code true} if the moderator has only sent anonymous messages, {@code false} otherwise.
+ * @returns true if the moderator has only sent anonymous messages, false otherwise.
  */
 export default function isModeratorCompletelyAnonymous(moderatorId: string, messages: Message[], hiddenMessageIds: string[]) {
     const moderatorMessages = messages.filter(message => message.author.id === moderatorId);
