@@ -95,16 +95,31 @@ export default async function generateTranscript(details: ConversationDetails, m
                 const attachmentSnowflake = path.pop();
                 const channelId = path.pop();
 
-                let expectedType = "";
-                if (filename.endsWith(".png") || filename.endsWith(".jpg") || filename.endsWith(".jpeg") || filename.endsWith(".gif") || filename.endsWith(".webp")) {
-                    expectedType = "image";
+                // Get the size and type of the attachment
+                try {
+                    const data = await fetch(attachment, { method: "HEAD" });
+                    const contentType = data.headers.get("Content-Type");
+                    const size = data.headers.get("Content-Length");
+
+                    attachments.push({
+                        name: attachment.split("/").pop(),
+                        url: attachment,
+                        size: parseInt(size),
+                        contentType: contentType
+                    });
                 }
-                else if (filename.endsWith(".mp4") || filename.endsWith(".mov") || filename.endsWith(".webm") || filename.endsWith(".wmv")) {
-                    expectedType = "video";
+                catch { // Assume the attachment is a standard file if we can't get the size and type
+                    attachments.push({
+                        name: attachment.split("/").pop(),
+                        url: attachment,
+                        size: 0,
+                        contentType: "application/octet-stream"
+                    });
                 }
-                else {
-                    expectedType = "any";
-                }
+
+                const attachmentObject = attachments[attachments.length - 1]; // The attachment just added to the array
+                const splitMime = attachmentObject.contentType.split("/")[0];
+                const expectedType = splitMime === "video" || splitMime === "image" ? splitMime : "any";
 
                 const webhookMessageMap = activeThread.webhookMessageMap.find(i => i.webhookMessageId === message.id);
                 const messageId = webhookMessageMap ? webhookMessageMap.originalMessageId : message.id;
@@ -153,29 +168,6 @@ export default async function generateTranscript(details: ConversationDetails, m
                     catch {
                         continue;
                     }
-                }
-            }
-
-            for (const attachment of urlAttachments) {
-                try {
-                    const data = await fetch(attachment, { method: "HEAD" });
-                    const contentType = data.headers.get("Content-Type");
-                    const size = data.headers.get("Content-Length");
-
-                    attachments.push({
-                        name: attachment.split("/").pop(),
-                        url: attachment,
-                        size: parseInt(size),
-                        contentType: contentType
-                    });
-                }
-                catch {
-                    attachments.push({
-                        name: attachment.split("/").pop(),
-                        url: attachment,
-                        size: 0,
-                        contentType: "application/octet-stream"
-                    });
                 }
             }
 
