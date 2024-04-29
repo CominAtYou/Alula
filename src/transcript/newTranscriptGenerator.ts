@@ -19,19 +19,22 @@ export default async function generateTranscript(details: ConversationDetails, m
     const template = await readFile("./src/transcript/transcript-template.html", 'utf-8');
     const $ = cheerio.load(template);
 
+    /** Groups of messages that comes one after another from the same author. Used for laying out messages in the transcript. */
     const groups: Message[][] = [];
     let currentGroup: Message[] = [];
-    let currentAuthor = messages[0].webhookId || messages[0].author.id;
+    let currentAuthor = messages[0].webhookId || messages[0].author.id; // This function runs in the context of the thread channel, so messages from the ticket opener will be webhooks.
     let isCurrentGroupAnonymous = activeThread.anonymousMessages.includes(messages[0].id);
 
+    // If this report is for the reporter, we need to filter out messages that are anonymous and ensure that they are shown in a separate group from non-anonymous messages.
     if (isReportForUser) {
         messages.forEach(message => {
             const isCurrentMessageAnonymous = activeThread.anonymousMessages.includes(message.id);
 
+            // If the current message meets the group's anonymity criteria, and the message is from the same author as the group, it gets added to the current group.
             if (((message.webhookId || message.author.id) === currentAuthor) && (isCurrentMessageAnonymous === isCurrentGroupAnonymous)) {
                 currentGroup.push(message);
             }
-            else {
+            else { // If a criterion isn't met, we're done with the current group and push it into the groups array and start with a new group.
                 groups.push(currentGroup);
                 currentGroup = [message];
                 currentAuthor = message.webhookId || message.author.id;
@@ -39,7 +42,7 @@ export default async function generateTranscript(details: ConversationDetails, m
             }
         });
     }
-    else {
+    else { // If not, just group the messages based on author.
         messages.forEach(message => {
             if ((message.webhookId || message.author.id) === currentAuthor) {
                 currentGroup.push(message);
@@ -52,15 +55,19 @@ export default async function generateTranscript(details: ConversationDetails, m
         });
     }
 
+    // One final push to add the last group to the groups array.
     groups.push(currentGroup);
 
     for (let i = 0; i < groups.length; i++) {
         const currentGroup = groups[i];
-        const side = currentGroup[0].webhookId ? 'left': 'right';
+        const side = currentGroup[0].webhookId ? 'left': 'right'; // Messages from the ticket opener (so, with a webhook ID) will be on the left side of the transcript.
+
+        /** A list of elements that can be shown in the transcript - each element being either a text message or an attachment. */
         const elementList: ElementEntry[] = [];
 
         let author: { username: string, avatarURL: string };
 
+        // Fill in the author's details for the message group.
         if (side === 'left') {
             author = { username: `@${details.creator.username}`, avatarURL: details.creator.displayAvatarURL({ extension: 'png', size: 128, forceStatic: true }) };
         }
@@ -75,6 +82,7 @@ export default async function generateTranscript(details: ConversationDetails, m
             const message = currentGroup[j];
             const attachments: Attachment[] = [];
 
+            // Collect all the attachments uploaded alongside the message.
             message.attachments.forEach(attachment => {
                 // expectedtype is the first part of the content type, e.g. image/png -> image
                 attachments.push({
@@ -85,9 +93,17 @@ export default async function generateTranscript(details: ConversationDetails, m
                 });
             });
 
+            // Find all the Discord CDN URLs in the message content
             const urlAttachments = message.content.match(/https:\/\/(?:cdn\.discordapp\.com|media\.discordapp\.net)\/[^\s]*/) || [];
             let filteredMessageContent = message.content;
 
+            /*
+            * For each URL, we need to:
+            *  - Determine the expected type of the attachment (image, video, or any)
+            *  - Remove the attachment URL from the message content
+            *  - Replace the attachment URL with a ATTACHMENT_RETREIVAL_DOMAIN URL (because Discord CDN URLs expire)
+            *  - (formatted as ${ATTACHMENT_URL_DOMAIN}/${channelId}/${messageId}/${attachmentSnowflake}/${filename}?expectedtype=${expectedType})
+            */
             for (let k = 0; k < urlAttachments.length; k++) {
                 const attachment = urlAttachments[k].split("?")[0];
                 const path = attachment.split("/");
@@ -124,22 +140,30 @@ export default async function generateTranscript(details: ConversationDetails, m
                 const webhookMessageMap = activeThread.webhookMessageMap.find(i => i.webhookMessageId === message.id);
                 const messageId = webhookMessageMap ? webhookMessageMap.originalMessageId : message.id;
 
-                filteredMessageContent = filteredMessageContent.replace(urlAttachments[k], "");
+                filteredMessageContent = filteredMessageContent.replace(urlAttachments[k], ""); // Remove the attachment URL from the message content
                 urlAttachments[k] = `${ATTACHMENT_RETREIVAL_DOMAIN}/${channelId}/${messageId}/${attachmentSnowflake}/${filename}?expectedtype=${expectedType}`
             }
 
+            /*
+             * Format the message content by:
+                *  - Removing trailing newlines
+                * - Replacing URLs with anchor tags
+                * - Replacing newlines with <br> tags
+                * - Removing the anonymous identity command if it's the first part of the message
+            */
             filteredMessageContent = filteredMessageContent
                 .replace(/\n+$/, "")
                 .replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')
                 .replace(/\n/g, "<br>")
                 .replace(new RegExp(`^${ANONYMOUS_COMMAND_PREFIX}identity `), "");
 
+            // Mentions will show up as <@USER_ID>, so we need to replace them with the mention's display name
             const mentions = filteredMessageContent.match(/<@[#&]?[0-9]{17,}>/g) || [];
 
             for (let k = 0; k < mentions.length; k++) {
                 const mention = mentions[k];
 
-                if (mention[2] === '&') {
+                if (mention[2] === '&') { // Role mentions are formatted as <@&ROLE_ID>
                     const roles = await details.guild.roles.fetch();
                     try {
                         const name = roles.find(role => role.id === mention.slice(3, -1)).name;
@@ -149,7 +173,7 @@ export default async function generateTranscript(details: ConversationDetails, m
                         continue;
                     }
                 }
-                else if (mention[2] === '#') {
+                else if (mention[2] === '#') { // Channel mentions are formatted as <@#CHANNEL_ID>
                     const channels = await details.guild.channels.fetch();
                     try {
                         const name = channels.find(channel => channel.id === mention.slice(3, -1)).name;
@@ -159,7 +183,7 @@ export default async function generateTranscript(details: ConversationDetails, m
                         continue;
                     }
                 }
-                else {
+                else { // User mentions show up as <@USER_ID>
                     const members = await details.guild.members.fetch();
                     try {
                         const name = members.find(member => member.id === mention.slice(2, -1)).displayName;
@@ -171,76 +195,80 @@ export default async function generateTranscript(details: ConversationDetails, m
                 }
             }
 
+            // If the message has textual content, add it to the element list
             if (filteredMessageContent !== "") {
                 elementList.push({ type: "text", content: filteredMessageContent });
             }
 
-            if (attachments.length > 0) {
-                attachments.forEach(attachment => {
-                    elementList.push({ type: "attachment", content: attachment });
-                });
-            }
+            // If any attachments were processed, add them to the element list
+            attachments.forEach(attachment => {
+                elementList.push({ type: "attachment", content: attachment });
+            });
         }
 
         const messageElement = $(`<div class="chathead-${side}"></div>`);
         messageElement.append(`<p class="message-details">${author.username} &bull; </p>`);
         messageElement.append(`<div style="display: none;" class="message-timestamp">${currentGroup[0].createdAt.getTime()}</div>`);
 
+        // Iterate over all the elements and add them to the transcript HTML
         for (let j = 0; j < elementList.length; j++) {
             const element = elementList[j];
 
-            if (j === 0) {
+            if (j === 0) { // The first message in a group needs to have a timestamp and the avatar of the sender
                 const firstMessage = $(`<div class="chathead-first-message"></div>`);
                 firstMessage.append(`<img class="chathead-avatar" src="${author.avatarURL}" onerror="this.onerror=null;this.src='https://cdn.discordapp.com/embed/avatars/0.png'" />`); // fall back to default Discord avatar
+
+                /*
+                 * Pick the correct kind of message bubble based on the type of element.
+                 * The bubble will then get appended to this group's messageElement element.
+                 */
                 if (element.type === "text") {
                     const messageBubble = $(`<div class="message-bubble ${elementList.length === 1 ? "message-bubble-single" : "message-bubble-initial"}"></div>`);
                     messageBubble.append(`<p>${element.content}</p>`);
                     firstMessage.append(messageBubble);
                 }
+                else if (element.content.contentType.startsWith("image/") && element.content.contentType !== "image/svg+xml") {
+                    const messageBubble = (`<img class="message-bubble ${elementList.length === 1 ? "message-bubble-single" : "message-bubble-initial"}" src="${element.content.url}" />`);
+                    firstMessage.append(messageBubble);
+                }
+                else if (element.content.contentType.startsWith("video/")) {
+                    const messageBubble = (`<video class="message-bubble ${elementList.length === 1 ? "message-bubble-single" : "message-bubble-initial"}" controls><source src="${element.content.url}" type="${element.content.contentType}"></video>`);
+                    firstMessage.append(messageBubble);
+                }
                 else {
-                    if (element.content.contentType.startsWith("image/") && element.content.contentType !== "image/svg+xml") {
-                        const messageBubble = (`<img class="message-bubble ${elementList.length === 1 ? "message-bubble-single" : "message-bubble-initial"}" src="${element.content.url}" />`);
-                        firstMessage.append(messageBubble);
-                    }
-                    else if (element.content.contentType.startsWith("video/")) {
-                        const messageBubble = (`<video class="message-bubble ${elementList.length === 1 ? "message-bubble-single" : "message-bubble-initial"}" controls><source src="${element.content.url}" type="${element.content.contentType}"></video>`);
-                        firstMessage.append(messageBubble);
-                    }
-                    else {
-                        const file_anchor = $(`<a aria-label="button" class="message-bubble ${elementList.length === 1 ? "message-bubble-single" : "message-bubble-initial"} message-bubble-file" href="${element.content.url}">${FILE_SVG}</a>`);
-                        file_anchor.append(`<div class="file-details"><p>${element.content.name}<p><p>${bytesToSize(element.content.size)} bytes</p></div>`);
-                        firstMessage.append(file_anchor);
-                    }
+                    const file_anchor = $(`<a aria-label="button" class="message-bubble ${elementList.length === 1 ? "message-bubble-single" : "message-bubble-initial"} message-bubble-file" href="${element.content.url}">${FILE_SVG}</a>`);
+                    file_anchor.append(`<div class="file-details"><p>${element.content.name}</p><p>${bytesToSize(element.content.size)}</p></div>`);
+                    firstMessage.append(file_anchor);
                 }
 
                 messageElement.append(firstMessage);
             }
-            else {
+            else { // We're working with a message that is either in the middle or the group or the final one.
                 const bubbleType = j === elementList.length - 1 ? "message-bubble-final" : "message-bubble-middle";
 
+                // Each bubble will has a class that determines how it looks, based on the element's position in the list.
                 if (element.type === "text") {
                     const messageBubble = $(`<div class="message-bubble ${bubbleType}"></div>`);
                     messageBubble.append(`<p>${element.content}</p>`);
                     messageElement.append(messageBubble);
                 }
+                else if (element.content.contentType.startsWith("image/") && !element.content.contentType.startsWith("image/svg+xml")) {
+                    const messageBubble = (`<img class="message-bubble ${bubbleType}" src="${element.content.url}" />`);
+                    messageElement.append(messageBubble);
+                }
+                else if (element.content.contentType.startsWith("video/")) {
+                    const messageBubble = (`<video class="message-bubble ${bubbleType}" controls><source src="${element.content.url}" type="${element.content.contentType}"></video>`);
+                    messageElement.append(messageBubble);
+                }
                 else {
-                    if (element.content.contentType.startsWith("image/") && !element.content.contentType.startsWith("image/svg+xml")) {
-                        const messageBubble = (`<img class="message-bubble ${bubbleType}" src="${element.content.url}" />`);
-                        messageElement.append(messageBubble);
-                    }
-                    else if (element.content.contentType.startsWith("video/")) {
-                        const messageBubble = (`<video class="message-bubble ${bubbleType}" controls><source src="${element.content.url}" type="${element.content.contentType}"></video>`);
-                        messageElement.append(messageBubble);
-                    }
-                    else {
-                        const file_anchor = $(`<a aria-label="button" class="message-bubble ${bubbleType} message-bubble-file" href="${element.content.url}">${FILE_SVG}</a>`);
-                        file_anchor.append(`<div class="file-details"><p>${element.content.name}<p><p>${bytesToSize(element.content.size)}</p></div>`);
-                        messageElement.append(file_anchor);
-                    }
+                    const file_anchor = $(`<a aria-label="button" class="message-bubble ${bubbleType} message-bubble-file" href="${element.content.url}">${FILE_SVG}</a>`);
+                    file_anchor.append(`<div class="file-details"><p>${element.content.name}<p><p>${bytesToSize(element.content.size)}</p></div>`);
+                    messageElement.append(file_anchor);
                 }
             }
         }
 
+        // Finally, append the message group HTML to the transcript content
         $("#conversation-content").append(messageElement);
     }
 
@@ -261,35 +289,38 @@ export default async function generateTranscript(details: ConversationDetails, m
     const visibleModerators: GuildMember[] = [];
 
     if (isReportForUser) {
+        // Filter out moderators who are completely anonymous from appearing in the "attending moderators" section.
         for (let i = 0; i < moderators.size; i++) {
             if (!isModeratorCompletelyAnonymous(moderators.at(i).id, messages, activeThread.anonymousMessages)) {
                 visibleModerators.push(moderators.at(i));
             }
         }
     }
-    else {
+    else { // Staff transcripts will always show the moderators.
         visibleModerators.push(...moderators.values());
     }
 
+    // If the thread was closed due to inactivity, remove the closer section.
     if (details.closerId === messages[0].client.user.id) {
         $("#conversation-closer-container").remove();
     }
     else if (isReportForUser) {
-        if (isModeratorCompletelyAnonymous(details.closerId, messages, activeThread.anonymousMessages)) {
+        if (isModeratorCompletelyAnonymous(details.closerId, messages, activeThread.anonymousMessages)) { // If the closer is anonymous, remove the closer section.
             $("#conversation-closer-container").remove();
         }
-        else {
+        else { // Otherwise, set the conversation closer text to the closer's username.
             $("#conversation-closer").text(`@${details.closerUsername}`);
         }
     }
-    else {
+    else { // Transcript is for staff; anonymity doesn't matter. Set the conversation closer text to the closer's username.
         $("#conversation-closer").text(`@${details.closerUsername}`);
     }
 
+    // If there are no visible moderators, remove the entire moderator section.
     if (visibleModerators.length === 0) {
         $("#attending-moderators").remove();
     }
-    else {
+    else { // Otherwise, populate the moderator section with the visible moderators.
         const moderatorElementsContainer = $("#conversation-details-moderators-content");
 
         visibleModerators.forEach(moderator => {
