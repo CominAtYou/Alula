@@ -60,15 +60,19 @@ export default async function closeThread(client: Client, channelId: string, inv
     await thread.setArchived(true);
     const isCloserAnonymous = isModeratorCompletelyAnonymous(invoker.id, threadMessages, activeThread.anonymousMessages);
 
-    await userDMChannel.send({
-        content: closedDueToInactivity ? "Your thread was closed due to inactivity. Send another message to open a new thread." : `Your thread was closed by ${isCloserAnonymous ? "a moderator" : `@${invoker.username}`}. Send another message to open a new thread.`,
-        files: [new AttachmentBuilder(Buffer.from(activeThread.anonymousMessages.length > 0 ? userTranscript : moderatorTranscript)).setName(`transcript-${user.username}-${thread.id}-${activeThread.anonymousMessages.length > 0 ? "ab" : ""}.html`)]
-    });
+    try {
+        await userDMChannel.send({
+            content: closedDueToInactivity ? "Your thread was closed due to inactivity. Send another message to open a new thread." : `Your thread was closed by ${isCloserAnonymous ? "a moderator" : `@${invoker.username}`}. Send another message to open a new thread.`,
+            files: [new AttachmentBuilder(Buffer.from(activeThread.anonymousMessages.length > 0 ? userTranscript : moderatorTranscript)).setName(`transcript-${user.username}-${thread.id}-${activeThread.anonymousMessages.length > 0 ? "ab" : ""}.html`)]
+        });
+    }
+    catch {}
 
     let membersInThread = "";
     thread.guildMembers.forEach(member => {
-        if (member.user.bot) return;
-        membersInThread += `<@${member.id}> - @${member.user.username}\n`
+        if (!member.user.bot) {
+            membersInThread += `<@${member.id}> - @${member.user.username}\n`;
+        }
     });
 
     membersInThread += `<@${user.id}> - @${user.username}`;

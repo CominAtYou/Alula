@@ -34,7 +34,7 @@ export default async function generateTranscript(details: ConversationDetails, m
             if (((message.webhookId || message.author.id) === currentAuthor) && (isCurrentMessageAnonymous === isCurrentGroupAnonymous)) {
                 currentGroup.push(message);
             }
-            else { // If a criterion isn't met, we're done with the current group and push it into the groups array and start with a new group.
+            else { // If a criterion isn't met, we're done with the current group; push it into the groups array and start with a new group.
                 groups.push(currentGroup);
                 currentGroup = [message];
                 currentAuthor = message.webhookId || message.author.id;
