@@ -1,5 +1,5 @@
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, Client, EmbedBuilder, Message, MessageType, TextChannel, ThreadChannel, User } from "discord.js";
-import { MODERATION_MODMAIL_LOG_CHANNEL_ID, APPEALS_MODMAIL_LOG_CHANNEL_ID, DATA_MODMAIL_LOG_CHANNEL_ID } from "../constants";
+import { MODERATION_MODMAIL_LOG_CHANNEL_ID, APPEALS_MODMAIL_LOG_CHANNEL_ID, DATA_MODMAIL_LOG_CHANNEL_ID, DEBUG_LOG_CHANNEL_ID } from "../constants";
 import { mongoDatabase } from "../db/mongoInstance";
 import { ThreadType } from "../types/ThreadType";
 import ActiveThread from "../types/ActiveThread";
@@ -108,4 +108,9 @@ export default async function closeThread(client: Client, channelId: string, inv
     await logChannel.send({ embeds: [embed], files: modTranscript, components: [buttonRow] });
 
     await mongoDatabase.collection<ActiveThread>("active_threads").deleteOne({ receivingThreadId: thread.id });
+
+    if (closedDueToInactivity) {
+        const debugLogChannel = await client.channels.fetch(DEBUG_LOG_CHANNEL_ID) as TextChannel;
+        await debugLogChannel.send(`Thread ${thread.id} (opened by @${user.username} [${user.id}]) was closed due to inactivity.`)
+    }
 }
