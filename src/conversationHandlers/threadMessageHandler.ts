@@ -2,7 +2,7 @@ import { Message } from "discord.js";
 import { mongoDatabase } from "../db/mongoInstance";
 import ActiveThread from "../types/ActiveThread";
 import splitMessage from "../util/splitMessage";
-import { ANONYMOUS_COMMAND_PREFIX } from "../constants";
+import { TEXT_COMMAND_PREFIX } from "../constants";
 
 export default async function handleThreadMessage(message: Message) {
     const activeThread = await mongoDatabase.collection<ActiveThread>("active_threads").findOne({ receivingThreadId: message.channel.id });
@@ -25,8 +25,8 @@ export default async function handleThreadMessage(message: Message) {
 
     let isCurrentMessageAnonymous = activeThread.areModeratorsHidden;
 
-    if (messageContent.startsWith(`${ANONYMOUS_COMMAND_PREFIX}identity `)) {
-        messageContent = messageContent.replace(`${ANONYMOUS_COMMAND_PREFIX}identity `, "");
+    if (messageContent.startsWith(`${TEXT_COMMAND_PREFIX}identity `)) {
+        messageContent = messageContent.replace(`${TEXT_COMMAND_PREFIX}identity `, "");
         isCurrentMessageAnonymous = !isCurrentMessageAnonymous;
     }
 
