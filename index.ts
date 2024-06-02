@@ -12,6 +12,7 @@ import attachmentRetreival from './src/webserver/attachmentRetreival';
 import ActiveThread from './src/types/ActiveThread';
 import { APPEALS_FORUM_CHANNEL_ID, DATA_FORUM_CHANNEL_ID, MODERATION_FORUM_CHANNEL_ID } from './src/constants';
 import scheduleThreadExpiryTask from './src/threads/threadExpiryTask';
+import aprilFools from './src/misc/aprilFools';
 
 const app = express();
 
@@ -31,6 +32,9 @@ client.on('messageCreate', async message => {
 
         await handleThreadMessage(message);
     }
+    else {
+        aprilFools(message);
+    }
 });
 
 client.on('interactionCreate', async interaction => {
@@ -39,14 +43,6 @@ client.on('interactionCreate', async interaction => {
     }
     else if (interaction.isCommand()) {
         slashCommandRouter(interaction);
-    }
-});
-
-client.on('messageCreate', async message => {
-    if (message.channel.id !== "222106327210655745") return;
-
-    if (Math.random() < 0.0005) {
-        message.react("❌");
     }
 });
 
