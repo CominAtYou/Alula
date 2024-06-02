@@ -7,7 +7,7 @@ import Attachment from "../types/Attachment";
 import { ElementEntry } from "../types/ElementEntry";
 import { minify } from "html-minifier";
 import bytesToSize from "../util/fileSizes";
-import { ATTACHMENT_RETREIVAL_DOMAIN, ANONYMOUS_COMMAND_PREFIX } from "../constants";
+import { ATTACHMENT_RETREIVAL_DOMAIN, TEXT_COMMAND_PREFIX } from "../constants";
 import { mongoDatabase } from "../db/mongoInstance";
 import ActiveThread from "../types/ActiveThread";
 import isModeratorCompletelyAnonymous from "../util/anonymousChecks";
@@ -155,7 +155,7 @@ export default async function generateTranscript(details: ConversationDetails, m
                 .replace(/\n+$/, "")
                 .replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')
                 .replace(/\n/g, "<br>")
-                .replace(new RegExp(`^${ANONYMOUS_COMMAND_PREFIX}identity `), "");
+                .replace(new RegExp(`^${TEXT_COMMAND_PREFIX}identity `), "");
 
             // Mentions will show up as <@USER_ID>, so we need to replace them with the mention's display name
             const mentions = filteredMessageContent.match(/<@[#&]?[0-9]{17,}>/g) || [];
