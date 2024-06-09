@@ -4,6 +4,10 @@ import { mongoDatabase } from "../db/mongoInstance";
 import CachedAttachment from "../types/CachedAttachment";
 
 export default async function attachmentRetreival(req: Request, res: Response, client: Client) {
+    if (req.path === "/") {
+        return res.setHeader("Content-Type", "text/plain").send("Calamus! You finally found Alula! But if you were looking for anything else, you'll need a path.");
+    }
+
     const path = req.path.split("/").slice(1);
 
     if (path.length !== 4 || !req.query.expectedtype) {
