@@ -63,7 +63,7 @@ export default async function closeThread(client: Client, channelId: string, inv
     try {
         await userDMChannel.send({
             content: closedDueToInactivity ? "Your thread was closed due to inactivity. Send another message to open a new thread." : `Your thread was closed by ${isCloserAnonymous ? "a moderator" : `@${invoker.username}`}. Send another message to open a new thread.`,
-            files: [new AttachmentBuilder(Buffer.from(activeThread.anonymousMessages.length > 0 ? userTranscript : moderatorTranscript)).setName(`transcript-${user.username}-${thread.id}-${activeThread.anonymousMessages.length > 0 ? "ab" : ""}.html`)]
+            files: [new AttachmentBuilder(Buffer.from(activeThread.anonymousMessages.length > 0 ? userTranscript : moderatorTranscript)).setName(`transcript-${user.username}-${thread.id}${activeThread.anonymousMessages.length > 0 ? "-ab" : ""}.html`)]
         });
     }
     catch {}
@@ -115,6 +115,6 @@ export default async function closeThread(client: Client, channelId: string, inv
 
     if (closedDueToInactivity) {
         const debugLogChannel = await client.channels.fetch(DEBUG_LOG_CHANNEL_ID) as TextChannel;
-        await debugLogChannel.send(`Thread ${thread.id} (opened by @${user.username} [${user.id}]) was closed due to inactivity.`)
+        await debugLogChannel.send(`Thread ${thread.id} (opened by @${user.username} [${user.id}]) was closed due to inactivity.`);
     }
 }
