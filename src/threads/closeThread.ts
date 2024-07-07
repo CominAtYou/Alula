@@ -6,6 +6,7 @@ import ActiveThread from "../types/ActiveThread";
 import ConversationDetails from "../types/ConversationDetails";
 import isModeratorCompletelyAnonymous from "../util/anonymousChecks";
 import generateTranscript from "../transcript/newTranscriptGenerator";
+import Analytics from "../types/Analytics";
 
 export default async function closeThread(client: Client, channelId: string, invoker: User) {
     const activeThread = await mongoDatabase.collection<ActiveThread>("active_threads").findOne({ receivingThreadId: channelId });
@@ -112,6 +113,7 @@ export default async function closeThread(client: Client, channelId: string, inv
     await logChannel.send({ embeds: [embed], files: modTranscript, components: [buttonRow] });
 
     await mongoDatabase.collection<ActiveThread>("active_threads").deleteOne({ receivingThreadId: thread.id });
+    await mongoDatabase.collection<Analytics>("analytics").updateOne({ guild: thread.guild.id }, { $inc: { closedThreads: 1 } }, { upsert: true });
 
     if (closedDueToInactivity) {
         const debugLogChannel = await client.channels.fetch(DEBUG_LOG_CHANNEL_ID) as TextChannel;
