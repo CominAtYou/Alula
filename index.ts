@@ -25,10 +25,10 @@ const client = new Client({
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    if (message.channel.type == ChannelType.DM) {
+    if (message.channel.type === ChannelType.DM) {
         await handlePrivateMessage(message);
     }
-    else if (message.channel.type == ChannelType.PublicThread) {
+    else if (message.channel.type === ChannelType.PublicThread) {
         if (![MODERATION_FORUM_CHANNEL_ID, APPEALS_FORUM_CHANNEL_ID, DATA_FORUM_CHANNEL_ID].includes(message.channel.parent.id)) return;
 
         await handleThreadMessage(message);

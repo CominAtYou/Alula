@@ -108,7 +108,7 @@ export default async function closeThread(client: Client, channelId: string, inv
         );
 
 
-    const LOG_CHANNEL_ID = activeThread.type == ThreadType.MODERATION ? MODERATION_MODMAIL_LOG_CHANNEL_ID : (activeThread.type == ThreadType.APPEAL ? APPEALS_MODMAIL_LOG_CHANNEL_ID : DATA_MODMAIL_LOG_CHANNEL_ID);
+    const LOG_CHANNEL_ID = activeThread.type === ThreadType.MODERATION ? MODERATION_MODMAIL_LOG_CHANNEL_ID : (activeThread.type === ThreadType.APPEAL ? APPEALS_MODMAIL_LOG_CHANNEL_ID : DATA_MODMAIL_LOG_CHANNEL_ID);
     const logChannel = await client.channels.fetch(LOG_CHANNEL_ID) as TextChannel;
     await logChannel.send({ embeds: [embed], files: modTranscript, components: [buttonRow] });
 
