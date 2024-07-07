@@ -1,0 +1,35 @@
+name: Push Tasks
+
+on:
+  push:
+    paths:
+      - '**.ts'
+  workflow_dispatch:
+
+jobs:
+  build:
+      runs-on: ubuntu-latest
+      steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-node@v4
+            with:
+                node-version: 20
+          - name: Install dependencies
+            run: npm install --force && npm i -g typescript@5.4.5 # TypeScript 5.5 causes conflicts between @types/node and discord.js as of now (see discord.js/10358)
+          - name: Prepare files
+            run: >
+              echo 'export const DISCORD_BOT_TOKEN = ""' > src/secrets.ts
+          - name: Build TypeScript
+            run: tsc
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-node@v4
+          with:
+              node-version: 20
+        - name: Install dependencies
+          run: npm install --force
+        - name: Run ESLint
+          run: npx eslint
+
