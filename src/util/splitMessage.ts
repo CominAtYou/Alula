@@ -14,11 +14,11 @@ export default function splitMessage(str: string) {
             end--;
         }
 
-        let linkRegex = /\bhttps?:\/\/[^\s]+/gi;
+        const linkRegex = /\bhttps?:\/\/[^\s]+/gi;
         let result: RegExpExecArray;
         while ((result = linkRegex.exec(str)) !== null) {
-            let urlStart = result.index;
-            let urlEnd = urlStart + result[0].length;
+            const urlStart = result.index;
+            const urlEnd = urlStart + result[0].length;
 
             if (start < urlStart && end > urlStart && end < urlEnd) {
                 end = urlEnd;

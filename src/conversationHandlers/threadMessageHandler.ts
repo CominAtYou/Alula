@@ -40,14 +40,14 @@ export default async function handleThreadMessage(message: Message) {
 
 
     for (let i = 0; i < messageContentSplit.length; i++) {
-        const newMessage = await userDMChannel.send({
+        await userDMChannel.send({
             content: (isCurrentMessageAnonymous ? `**Staff Member**: ` : `**@${message.author.username}**: `) + messageContentSplit[i],
             files: i === messageContentSplit.length - 1 ? files : []
         });
     }
 
     if (messageContentSplit.length === 0) {
-        const newMessage = await userDMChannel.send({
+        await userDMChannel.send({
             content: (isCurrentMessageAnonymous ? `**Staff Member**: ` : `**@${message.author.username}**: `) + messageContent,
             files: files
         });

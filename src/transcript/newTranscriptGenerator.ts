@@ -1,4 +1,4 @@
-import { Collection, GuildMember, Message, MessageType } from "discord.js";
+import { Collection, GuildMember, Message } from "discord.js";
 import cheerio = require("cheerio");
 import { readFile } from "fs/promises";
 import { ThreadType } from "../types/ThreadType";

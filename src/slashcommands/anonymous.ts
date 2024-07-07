@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, CommandInteraction, MessageFlags } from "discord.js";
+import { ChatInputCommandInteraction, MessageFlags } from "discord.js";
 import { mongoDatabase } from "../db/mongoInstance";
 import ActiveThread from "../types/ActiveThread";
 import { TEXT_COMMAND_PREFIX } from "../constants";

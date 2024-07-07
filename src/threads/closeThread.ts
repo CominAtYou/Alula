@@ -67,7 +67,7 @@ export default async function closeThread(client: Client, channelId: string, inv
             files: [new AttachmentBuilder(Buffer.from(activeThread.anonymousMessages.length > 0 ? userTranscript : moderatorTranscript)).setName(`transcript-${user.username}-${thread.id}${activeThread.anonymousMessages.length > 0 ? "-ab" : ""}.html`)]
         });
     }
-    catch {}
+    catch { /* empty */ }
 
     let membersInThread = "";
     thread.guildMembers.forEach(member => {
