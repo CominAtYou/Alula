@@ -26,7 +26,7 @@ export default async function attachmentRetreival(req: Request, res: Response, c
         var channel = await client.channels.fetch(path[0]) as GuildTextBasedChannel;
         var message = await channel.messages.fetch(path[1]);
     }
-    catch (e) {
+    catch {
         if ((req.query.expectedtype as string).toLowerCase() === 'image') {
             res.sendFile("image_not_found.png", { root: `${process.cwd()}/src/assets` });
         }
