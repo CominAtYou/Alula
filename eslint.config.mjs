@@ -17,6 +17,7 @@ export default [
         rules: {
             'no-var': 'off',
             'eqeqeq': 'error',
+            "@typescript-eslint/no-require-imports": 'off'
         },
     },
     {
