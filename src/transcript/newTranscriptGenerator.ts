@@ -19,7 +19,7 @@ export default async function generateTranscript(details: ConversationDetails, m
     const template = await readFile("./src/transcript/transcript-template.html", 'utf-8');
     const $ = cheerio.load(template);
 
-    /** Groups of messages that comes one after another from the same author. Used for laying out messages in the transcript. */
+    /** Groups of messages from the same author that come one after another. Used for laying out messages in the transcript. */
     const groups: Message[][] = [];
     let currentGroup: Message[] = [];
     let currentAuthor = messages[0].webhookId || messages[0].author.id; // This function runs in the context of the thread channel, so messages from the ticket opener will be webhooks.
@@ -158,7 +158,7 @@ export default async function generateTranscript(details: ConversationDetails, m
                 .replace(new RegExp(`^${TEXT_COMMAND_PREFIX}identity `), "");
 
             // Mentions will show up as <@USER_ID>, so we need to replace them with the mention's display name
-            const mentions = filteredMessageContent.match(/<@[#&]?[0-9]{17,}>/g) || [];
+            const mentions = filteredMessageContent.match(/<@[#&]?[0-9]{15,}>/g) || [];
 
             for (let k = 0; k < mentions.length; k++) {
                 const mention = mentions[k];
