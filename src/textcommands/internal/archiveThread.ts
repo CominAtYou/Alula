@@ -1,4 +1,4 @@
-import { Message, ThreadChannel } from "discord.js";
+import { Channel, ThreadChannel, Message } from "discord.js";
 import { mongoDatabase } from "../../db/mongoInstance";
 import ActiveThread from "../../types/ActiveThread";
 
@@ -20,7 +20,16 @@ export default async function archiveThread(message: Message, args: string[]) {
         return;
     }
 
-    const channel = (message.client.channels.cache.get(args[0]) ?? await message.client.channels.fetch(args[0]));
+    const quip = quips[Math.floor(Math.random() * quips.length)];
+
+    let channel: Channel;
+    try {
+        channel = (message.client.channels.cache.get(args[0]) ?? await message.client.channels.fetch(args[0]));
+    }
+    catch {
+        message.channel.send(`That thread doesn't seem to exist.\n-# Did you know that ${quip}?`);
+        return;
+    }
 
     if (!channel.isThread()) {
         message.channel.send("That channel isn't a thread.");
@@ -37,6 +46,5 @@ export default async function archiveThread(message: Message, args: string[]) {
     await thread.setArchived(true);
     await mongoDatabase.collection<ActiveThread>("active_threads").deleteOne({ receivingThreadId: thread.id });
 
-    const quip = quips[Math.floor(Math.random() * quips.length)];
     message.channel.send(`Done! Thread archived.\n-# Did you know that ${quip}?`);
 }
