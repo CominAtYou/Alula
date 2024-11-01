@@ -12,13 +12,18 @@ const quips = [
 ];
 
 export default async function archiveThread(interaction: ChatInputCommandInteraction) {
-    const threadId = interaction.options.getNumber("thread_id", true);
+    const threadId = interaction.options.getString("thread_id", true);
+
+    if (/[0-9]{18,}/.test(threadId) === false) {
+        await interaction.reply("Please provide a valid Thread ID.");
+        return;
+    }
 
     const quip = quips[Math.floor(Math.random() * quips.length)];
 
     let channel: Channel;
     try {
-        channel = (interaction.client.channels.cache.get(threadId.toString()) ?? await interaction.client.channels.fetch(threadId.toString()));
+        channel = (interaction.client.channels.cache.get(threadId) ?? await interaction.client.channels.fetch(threadId));
     }
     catch {
         interaction.channel.send(`That thread doesn't seem to exist.\n-# Did you know that ${quip}?`);
