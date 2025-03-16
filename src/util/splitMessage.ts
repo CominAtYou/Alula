@@ -15,7 +15,7 @@ export default function splitMessage(str: string) {
         }
 
         const linkRegex = /\bhttps?:\/\/[^\s]+/gi;
-        let result: RegExpExecArray;
+        let result: RegExpExecArray | null;
         while ((result = linkRegex.exec(str)) !== null) {
             const urlStart = result.index;
             const urlEnd = urlStart + result[0].length;

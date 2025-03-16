@@ -24,7 +24,7 @@ export default async function clearUserEntry(interaction: ChatInputCommandIntera
 
     if (threadIsActive) {
         const warningMessage = await interaction.reply({
-            content: `${targetUser.displayName} **currently has an open thread**, <#${threadChannel.id}>. Proceeding with this command will close the thread.\n\nAre you sure you want to continue?`,
+            content: `${targetUser.displayName} **currently has an open thread**, <#${threadChannel!.id}>. Proceeding with this command will close the thread.\n\nAre you sure you want to continue?`,
             components: [
                 new ActionRowBuilder<ButtonBuilder>().addComponents(
                     new ButtonBuilder()
@@ -54,7 +54,7 @@ export default async function clearUserEntry(interaction: ChatInputCommandIntera
         }
         else {
             await response.update({ content: "<a:loading:1181489462484672575>  Just a sec...", components: [] });
-            await closeThread(interaction.client, threadChannel.id, interaction.user);
+            await closeThread(interaction.client, threadChannel!.id, interaction.user);
             await response.message.edit(`The thread has been closed and the user purged from the database. If ${targetUser.displayName} was having trouble opening a report, ask them to try again.`);
         }
     }

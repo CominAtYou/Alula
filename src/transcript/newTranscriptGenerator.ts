@@ -15,7 +15,7 @@ import isModeratorCompletelyAnonymous from "../util/anonymousChecks";
 const FILE_SVG = `<svg class="file-icon" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"></path></svg>`;
 
 export default async function generateTranscript(details: ConversationDetails, messages: Message[], moderators: Collection<string, GuildMember>, isReportForUser: boolean) {
-    const activeThread = await mongoDatabase.collection<ActiveThread>("active_threads").findOne({ receivingThreadId: details.threadId });;
+    const activeThread = (await mongoDatabase.collection<ActiveThread>("active_threads").findOne({ receivingThreadId: details.threadId }))!;
     const template = await readFile("./src/transcript/transcript-template.html", 'utf-8');
     const $ = cheerio.load(template);
 
@@ -87,9 +87,9 @@ export default async function generateTranscript(details: ConversationDetails, m
                 // expectedtype is the first part of the content type, e.g. image/png -> image
                 attachments.push({
                     name: attachment.name,
-                    url: `${ATTACHMENT_RETREIVAL_DOMAIN}/${message.channel.id}/${message.id}/${attachment.id}/${attachment.name}?expectedtype=${attachment.contentType.split("/")[0]}`,
+                    url: `${ATTACHMENT_RETREIVAL_DOMAIN}/${message.channel.id}/${message.id}/${attachment.id}/${attachment.name}?expectedtype=${attachment.contentType!.split("/")[0]}`,
                     size: attachment.size,
-                    contentType: attachment.contentType
+                    contentType: attachment.contentType!
                 });
             });
 
@@ -114,11 +114,11 @@ export default async function generateTranscript(details: ConversationDetails, m
                 // Get the size and type of the attachment
                 try {
                     const data = await fetch(attachment, { method: "HEAD" });
-                    const contentType = data.headers.get("Content-Type");
-                    const size = data.headers.get("Content-Length");
+                    const contentType = data.headers.get("Content-Type")!;
+                    const size = data.headers.get("Content-Length")!;
 
                     attachments.push({
-                        name: attachment.split("/").pop(),
+                        name: attachment.split("/").pop()!,
                         url: attachment,
                         size: parseInt(size),
                         contentType: contentType
@@ -126,7 +126,7 @@ export default async function generateTranscript(details: ConversationDetails, m
                 }
                 catch { // Assume the attachment is a standard file if we can't get the size and type
                     attachments.push({
-                        name: attachment.split("/").pop(),
+                        name: attachment.split("/").pop()!,
                         url: attachment,
                         size: 0,
                         contentType: "application/octet-stream"
@@ -166,7 +166,7 @@ export default async function generateTranscript(details: ConversationDetails, m
                 if (mention[2] === '&') { // Role mentions are formatted as <@&ROLE_ID>
                     const roles = await details.guild.roles.fetch();
                     try {
-                        const name = roles.find(role => role.id === mention.slice(3, -1)).name;
+                        const name = roles.find(role => role.id === mention.slice(3, -1))!.name;
                         filteredMessageContent = filteredMessageContent.replace(mention, `@${name}`);
                     }
                     catch {
@@ -176,7 +176,7 @@ export default async function generateTranscript(details: ConversationDetails, m
                 else if (mention[2] === '#') { // Channel mentions are formatted as <@#CHANNEL_ID>
                     const channels = await details.guild.channels.fetch();
                     try {
-                        const name = channels.find(channel => channel.id === mention.slice(3, -1)).name;
+                        const name = channels.find(channel => channel!.id === mention.slice(3, -1))!.name;
                         filteredMessageContent = filteredMessageContent.replace(mention, `#${name}`);
                     }
                     catch {
@@ -186,7 +186,7 @@ export default async function generateTranscript(details: ConversationDetails, m
                 else { // User mentions show up as <@USER_ID>
                     const members = await details.guild.members.fetch();
                     try {
-                        const name = members.find(member => member.id === mention.slice(2, -1)).displayName;
+                        const name = members.find(member => member.id === mention.slice(2, -1))!.displayName;
                         filteredMessageContent = filteredMessageContent.replace(mention, `@${name}`);
                     }
                     catch {
@@ -291,8 +291,8 @@ export default async function generateTranscript(details: ConversationDetails, m
     if (isReportForUser) {
         // Filter out moderators who are completely anonymous from appearing in the "attending moderators" section.
         for (let i = 0; i < moderators.size; i++) {
-            if (!isModeratorCompletelyAnonymous(moderators.at(i).id, messages, activeThread.anonymousMessages)) {
-                visibleModerators.push(moderators.at(i));
+            if (!isModeratorCompletelyAnonymous(moderators.at(i)!.id, messages, activeThread.anonymousMessages)) {
+                visibleModerators.push(moderators.at(i)!);
             }
         }
     }

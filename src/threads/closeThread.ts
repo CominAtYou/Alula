@@ -1,4 +1,4 @@
-import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, Client, EmbedBuilder, Message, MessageType, TextChannel, ThreadChannel, User } from "discord.js";
+import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, Client, Collection, EmbedBuilder, Message, MessageType, TextChannel, ThreadChannel, User } from "discord.js";
 import { MODERATION_MODMAIL_LOG_CHANNEL_ID, APPEALS_MODMAIL_LOG_CHANNEL_ID, DATA_MODMAIL_LOG_CHANNEL_ID, DEBUG_LOG_CHANNEL_ID } from "../constants";
 import { mongoDatabase } from "../db/mongoInstance";
 import { ThreadType } from "../types/ThreadType";
@@ -11,7 +11,7 @@ import Analytics from "../types/Analytics";
 export default async function closeThread(client: Client, channelId: string, invoker: User) {
     const activeThread = await mongoDatabase.collection<ActiveThread>("active_threads").findOne({ receivingThreadId: channelId });
     const thread = await client.channels.fetch(channelId) as ThreadChannel;
-    const closedDueToInactivity = invoker.id === client.user.id;
+    const closedDueToInactivity = invoker.id === client.user!.id;
 
     if (!activeThread) return;
 
@@ -21,7 +21,7 @@ export default async function closeThread(client: Client, channelId: string, inv
     const threadDetails: ConversationDetails = {
         type: activeThread.type,
         threadId: thread.id,
-        opened: thread.createdAt,
+        opened: thread.createdAt!,
         guild: thread.guild,
         closed: new Date(),
         closerUsername: invoker.username,
@@ -30,13 +30,13 @@ export default async function closeThread(client: Client, channelId: string, inv
     }
 
     const threadMessages: Message[] = [];
-    let lastMessageId: string;
+    let lastMessageId: string | undefined = undefined;
     let lastNumberOfRetrievedMessages = 0;
 
     do {
-        const messages = await thread.messages.fetch({ limit: 100, before: lastMessageId });
+        const messages: Collection<string, Message<true>> = await thread.messages.fetch({ limit: 100, before: lastMessageId });
         lastNumberOfRetrievedMessages = messages.size;
-        lastMessageId = messages.last().id;
+        lastMessageId = messages.last()!.id;
         threadMessages.push(...messages.filter(message => message.type === MessageType.Default && (!message.author.bot || message.webhookId)).values());
     }
     while (lastNumberOfRetrievedMessages === 100);
@@ -64,7 +64,7 @@ export default async function closeThread(client: Client, channelId: string, inv
     try {
         await userDMChannel.send({
             content: closedDueToInactivity ? "Your thread was closed due to inactivity. Send another message to open a new thread." : `Your thread was closed by ${isCloserAnonymous ? "a moderator" : `@${invoker.username}`}. Send another message to open a new thread.`,
-            files: [new AttachmentBuilder(Buffer.from(activeThread.anonymousMessages.length > 0 ? userTranscript : moderatorTranscript)).setName(`transcript-${user.username}-${thread.id}${activeThread.anonymousMessages.length > 0 ? "-ab" : ""}.html`)]
+            files: [new AttachmentBuilder(Buffer.from(activeThread.anonymousMessages.length > 0 ? userTranscript! : moderatorTranscript)).setName(`transcript-${user.username}-${thread.id}${activeThread.anonymousMessages.length > 0 ? "-ab" : ""}.html`)]
         });
     }
     catch { /* empty */ }

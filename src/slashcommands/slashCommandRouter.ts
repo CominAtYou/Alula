@@ -5,7 +5,7 @@ import closeThreadSlashCommand from "./closeThread";
 import clearUserEntry from "./clear";
 import { disableAppeals } from "./disableAppeals";
 
-const slashCommands: { [key: string]: (arg0: ChatInputCommandInteraction) => Promise<void> } = {
+const slashCommands: { [key: string]: (interaction: ChatInputCommandInteraction) => Promise<void> } = {
     "1158087318431867023": anonymousSlashCommand,
     "1158611799088828518": disableModmail,
     "1158860642669830185": closeThreadSlashCommand,

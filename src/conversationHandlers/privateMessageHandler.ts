@@ -64,7 +64,7 @@ async function createNewThread(message: Message, guildMember: GuildMember, guild
         ]
     });
 
-    let response: StringSelectMenuInteraction = null;
+    let response: StringSelectMenuInteraction;
     try {
         typeSelectionInProgressUsers.push(message.author.id);
         response = await mailTypeMessage.awaitMessageComponent<ComponentType.StringSelect>({ time: 60000 });
@@ -77,9 +77,16 @@ async function createNewThread(message: Message, guildMember: GuildMember, guild
 
     await response.deferUpdate();
     const threadType = response.values[0] as ThreadType;
+
+    if (threadType === ThreadType.APPEAL && guildConfig?.appealsDisabled) {
+        await mailTypeMessage.edit({ content: "Appeals aren't currently being accepted at this time. Please try again later.", components: [], embeds: [] });
+        typeSelectionInProgressUsers.splice(typeSelectionInProgressUsers.indexOf(message.author.id), 1);
+        return;
+    }
+
     const forumChannel = await message.client.channels.fetch(threadIds[threadType]) as ForumChannel;
     const forumChannelWebhooks = await forumChannel.fetchWebhooks();
-    const webhook = forumChannelWebhooks.size > 0 ? forumChannelWebhooks.first() : await forumChannel.createWebhook({ name: "Modmail Webhook", reason: "No webhook was present for the forum channel." });
+    const webhook = forumChannelWebhooks.size > 0 ? forumChannelWebhooks.first()! : await forumChannel.createWebhook({ name: "Modmail Webhook", reason: "No webhook was present for the forum channel." });
 
     typeSelectionInProgressUsers.splice(typeSelectionInProgressUsers.indexOf(message.author.id), 1);
 
@@ -183,7 +190,7 @@ export default async function handlePrivateMessage(message: Message) {
         }
 
         const forumChannelWebhooks = await forumChannel.fetchWebhooks();
-        const webhook = forumChannelWebhooks.size > 0 ? forumChannelWebhooks.first() : await forumChannel.createWebhook({ name: "Modmail Webhook", reason: "No webhook was present for the forum channel." });
+        const webhook = forumChannelWebhooks.size > 0 ? forumChannelWebhooks.first()! : await forumChannel.createWebhook({ name: "Modmail Webhook", reason: "No webhook was present for the forum channel." });
 
         const files = message.attachments.filter(attachment => attachment.size <= 25000000).map(attachment => attachment.url);
         const leftoverFiles = message.attachments.filter(attachment => attachment.size > 25000000);

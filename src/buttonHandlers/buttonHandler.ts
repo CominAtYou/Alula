@@ -1,7 +1,7 @@
 import { ButtonInteraction } from "discord.js";
 import closeThreadButtonHandler from "./closeThreadButton";
 
-const buttonHandlers =  {
+const buttonHandlers: { [key: string]: (interaction: ButtonInteraction) => Promise<void> } = {
     "close_thread": closeThreadButtonHandler
 }
 

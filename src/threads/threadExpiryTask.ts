@@ -11,7 +11,7 @@ export default function scheduleThreadExpiryTask(client: Client) {
 
         for await (const doc of threads) {
             const thread = await client.channels.fetch(doc.receivingThreadId) as ThreadChannel;
-            const message = await thread.messages.fetch(thread.lastMessageId);
+            const message = await thread.messages.fetch(thread.lastMessageId!);
 
             if (thread.parentId === APPEALS_FORUM_CHANNEL_ID) {
                 continue;
@@ -19,7 +19,7 @@ export default function scheduleThreadExpiryTask(client: Client) {
 
             // one week expiry
             if (Date.now() - message.createdTimestamp > 604800000) {
-                await closeThread(client, thread.id, client.user);
+                await closeThread(client, thread.id, client.user!);
             }
         }
     })
